@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 # Import Types
 from typing import List, Dict
 from typing import NewType

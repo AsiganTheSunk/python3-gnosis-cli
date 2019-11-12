@@ -1,30 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-class NetworkAgentSocketError(Exception):
-    """ NetworkAgentSocketError
+class InfuraProviderError(Exception):
+    """ InfuraProviderError
 
-    Raised when the Network Agent is unable to establish a connection to a host
+    Raised when the infura Provider is unable to perform proper operations to the EndPoint giving an known error
+        :param _provider_name
+        :param _err
+        :param _trace
+        :return Error Exception Message
     """
-    def __init__(self, webscraper_name, err, trace, *args):
+    def __init__(self, _provider_name, _network, _err, _trace, *args):
         self.name = self.__class__.__name__
-        self.trace = trace
-        self.webscraper_name = webscraper_name
-        self.err = err
-        self.message = '{0}, in  {1} Unable to establish a connection to the EndPoint: [ {2} ]'.format(self.name, webscraper_name, err)
-        super(NetworkAgentSocketError, self).__init__(self.message, err, webscraper_name, *args)
+        self.provider_name = _provider_name
+        self.err = _err
+        self.trace = _trace
+        self.message = '{0}, in {1} Unable to perform proper operations to the EndPoint: [ {2} ]'.format(self.name, _provider_name, _err)
+        super(InfuraProviderError, self).__init__(self.message, _err, _provider_name, *args)
 
 
-class NetworkAgentFatalException(Exception):
-    """ NetworkAgentSocketError
+class InfuraProviderFatalException(Exception):
+    """ InfuraProviderFatalException
 
-    Raised when the Network Agent is unable to establish a connection to a host
+    Raised when the infura Provider is unable to perform proper operations to the EndPoint giving an unknown exception
+        :param _provider_name
+        :param _err
+        :param _trace
+        :return Fatal Exception Message
     """
-    def __init__(self, webscraper_name, err, trace, *args):
+    def __init__(self, _provider_name, _err, _trace, *args):
         self.name = self.__class__.__name__
-        self.trace = trace
-        self.webscraper_name = webscraper_name
-        self.err = err
-        self.message = '{0}, in  {1} Unable to establish a connection to the EndPoint: [ {2} ]'.format(self.name, webscraper_name, err)
-        super(NetworkAgentFatalException, self).__init__(self.message, err, webscraper_name, *args)
+        self.provider_name = _provider_name
+        self.err = _err
+        self.trace = _trace
+        self.message = '{0}, in {1} Unable to perform proper operations with the EndPoint: [ {2} ]'.format(self.name, _provider_name, _err)
+        super(InfuraProviderFatalException, self).__init__(self.message, _err, _provider_name, *args)
 
