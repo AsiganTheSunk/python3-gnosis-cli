@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
-
+# Import Pygments Package
 from pygments.lexers.sql import SqlLexer
+
+# Import PromptToolkit Package
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.styles import Style
+
+# Import Provider Packages
+from core.providers.ganache_provider import GanacheProvider
+from core.providers.infura_provider import InfuraProvider
+
+# Import Sys Package
+import sys
+
 
 gnosis_safe_cli_completer = WordCompleter([
     'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
@@ -21,8 +30,8 @@ style = Style.from_dict({
     'scrollbar.button': 'bg:#222222',
 })
 
-def main(database):
-    #connection = sqlite3.connect(database)
+def main():
+    # connection = sqlite3.connect(database)
     session = PromptSession(
         lexer=PygmentsLexer(SqlLexer), completer=gnosis_safe_cli_completer, style=style)
 
@@ -44,6 +53,7 @@ def main(database):
         #             print(message)
 
     print('GoodBye!')
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -67,7 +77,3 @@ if __name__ == '__main__':
 #     with ProgressBar(title='Scrolling task name (make sure the window is not too big).') as pb:
 #         for i in pb(range(800), label='This is a very very very long task that requires horizontal scrolling ...'):
 #             time.sleep(.01)
-
-
-if __name__ == '__main__':
-    main()
