@@ -1,13 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# Importing Custom Logger & Logging Modules
+from core.logger.custom_logger import CustomLogger
+from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
+from logging import INFO, DEBUG, WARNING
+import logging
+
+import re
 
 class GnosisConsoleInputValidation:
     """ Gnosis Console Input
 
     """
-    def __init__(self):
+    def __init__(self, logging_lvl=INFO):
         self.name = self.__class__.__name__
+        self.logger = CustomLogger(self.name, logging_lvl)
+
+        # CustomLogger Format Definition
+        formatter = logging.Formatter(fmt='%(asctime)s - [%(levelname)s]: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
+        # Custom Logger File Configuration: File Init Configuration
+        file_handler = logging.FileHandler('./log/gnosis_console/gnosis_console_input_validation.log', 'w')
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(level=logging_lvl)
+
+        # Custom Logger Console Configuration: Console Init Configuration
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(level=logging_lvl)
+
+        # Custom Logger Console/File Handler Configuration
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
 
     @staticmethod
     def input_api_key_validation(api_key):
