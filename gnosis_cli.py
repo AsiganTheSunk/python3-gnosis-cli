@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Import Gnosis Console Input Validation
-from .core.gnosis_console_input_validation import GnosisConsoleInputValidation
+from core.gnosis_console_input_validation import GnosisConsoleInputValidation
+from core.gnosis_console_input import GnosisConsoleInput
 
 # Import Click Package
 import click
