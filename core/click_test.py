@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
+# Import Click Package
 import click
 
-#from caesar_encryption import encrypt
+cyphertext = ''
+
 
 @click.command()
 @click.option(
@@ -17,7 +23,6 @@ import click
     default='b3fa360a82cd459e8f1b459b3cf9127c',
     help='The hash/alpha-numeric key to use in the blockchain network.'
 )
-
 def caesar(input_file, output_file, decrypt, key):
     if input_file:
         text = input_file.read()
@@ -25,11 +30,12 @@ def caesar(input_file, output_file, decrypt, key):
         text = click.prompt('Enter a text', hide_input=not decrypt)
     if decrypt:
         key = -key
-    #cyphertext = encrypt(text, key)
+    # cyphertext = encrypt(text, key)
     if output_file:
         output_file.write(cyphertext)
     else:
         click.echo(cyphertext)
+
 
 if __name__ == '__main__':
     caesar()
