@@ -35,7 +35,7 @@ import click
     '--api_key',
     '--key',
     '--k',
-    default='b3fa360a82cd459e8f1b459b3cf9127c',
+    default='A1T1PKJXZJC1T4RJZK4ZMZH4JEYTUGAA6G',
     help='The api key for the blockchain network.'
 )
 @click.option(
@@ -67,9 +67,8 @@ def gnosis_cli(network, network_id, network_params, contract, address, api_key, 
     :return:
     """
     gnosis_cli = GnosisConsoleInputValidation()
-    gnosis_cli.input_api_key_validation(address)
-    gnosis_cli.input_contract_validation(contract)
-    gnosis_cli.input_address_validation(api_key)
+    gnosis_cli.input_api_key_validation(api_key)
+    gnosis_cli.input_address_validation(address)
     gnosis_cli.input_network_validation(network, network_id, network_params)
 
     print(network, network_id, network_params, contract, address, api_key, script)
