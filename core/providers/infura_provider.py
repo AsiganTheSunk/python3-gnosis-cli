@@ -9,7 +9,7 @@ class InfuraProvider:
         self.name = self.__class__.__name__
         self.api_key = api_key
         self.port = ''
-        self.address = (lambda _address: 'https://mainnet.infura.io/v3/' if network is 'mainnet' else 'https://rinkeby.infura.io/v3/')
+        self.address = self.select_network(network)
         self.uri = '{0}{1}'.format(self.address, self.api_key)
 
         self._properties = {
@@ -25,6 +25,29 @@ class InfuraProvider:
             return self._properties
         return self._properties[_key]
 
-    def get_provider(self):
-        return Web3(Web3.HTTPProvider(self.uri))
+    def select_network(self, network):
+        if network == 'mainnet':
+            return 'https://mainnet.infura.io/v3/'
+        return 'https://rinkeby.infura.io/v3/'
 
+    def get_provider(self):
+        try:
+            provider = Web3(Web3.HTTPProvider(self.uri))
+            print('Current Provider: ', provider.isConnected())
+            return provider
+        except Exception as err:
+            print(err)
+
+    def get_contract(self, contract_address, contract_abi):
+        current_contract = Web3.eth.contract(address=contract_address, abi=contract_abi)
+
+        # print(contract.__dict__)
+        # print(contract.address)
+        current_abi_function = current_contract.functions.__dict__
+        for item in current_abi_function['abi']:
+            print(item['name'])
+            print(item['inputs'])
+            try:
+                print(item['outputs'])
+            except Exception as err:
+                pass
