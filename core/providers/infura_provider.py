@@ -39,10 +39,11 @@ class InfuraProvider:
             print(err)
 
     def get_contract(self, contract_address, contract_abi):
-        current_contract = Web3.eth.contract(address=contract_address, abi=contract_abi)
-
-        # print(contract.__dict__)
-        # print(contract.address)
+        provider = Web3(Web3.HTTPProvider(self.uri))
+        print('Current Provider: ', provider.isConnected())
+        current_contract = provider.eth.contract(address=contract_address, abi=contract_abi)
+        # print(current_contract.__dict__)
+        # print(current_contract.address)
         current_abi_function = current_contract.functions.__dict__
         for item in current_abi_function['abi']:
             print(item['name'])

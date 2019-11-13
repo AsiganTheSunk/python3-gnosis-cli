@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # Import Web3 Module
-from web3 import Web3, HTTPProvider
+from web3 import Web3
 
+from web3.providers.rpc import HTTPProvider
 
 class GanacheProvider:
     def __init__(self, gui=False):
@@ -41,7 +42,8 @@ class GanacheProvider:
             print(err)
 
     def get_contract(self, contract_address, contract_abi):
-        current_contract = Web3.eth.contract(address=contract_address, abi=contract_abi)
+        provider = Web3(HTTPProvider(self.uri))
+        current_contract = provider.eth.contract(address=contract_address, abi=contract_abi)
 
         # print(contract.__dict__)
         # print(contract.address)
