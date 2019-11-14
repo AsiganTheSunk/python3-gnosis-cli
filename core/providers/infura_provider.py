@@ -87,7 +87,7 @@ class InfuraProvider:
         current_status = False
         current_provider = None
         try:
-            self.logger.info('{0} stablishing connection to {1} netwok with infura API via {2}'.format(self.name, self.network_name, self.uri))
+            self.logger.info('{0} stablishing connection to {1} network with infura API via {2}'.format(self.name, self.network_name, self.uri))
             try:
                 current_provider = Web3(HTTPProvider(self.uri, request_kwargs={'timeout': 60}))
                 current_status = current_provider.isConnected()
