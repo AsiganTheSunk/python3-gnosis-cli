@@ -111,6 +111,7 @@ class GanacheProvider:
 
                     functions_contract_data[index] = {
                         'function_name': item_name,
+                        'function_call_clean': 'current_contract.functions.{0}({1}).call',
                         'function_call': 'current_contract.functions.{}().call'.format(item['name']),
                         'function_input': item_input
                     }

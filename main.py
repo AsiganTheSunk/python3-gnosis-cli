@@ -105,6 +105,30 @@ def main():
     # infura_provider = InfuraProvider('rinkeby')
     # infura_provider.get_contract(test_address_contract, test_abi_contract)
 
+import re
+
+def eval_function_old(value='isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C'):
+
+    try:
+        splitted_input = value.split(' ')
+    except TypeError:
+        pass
+    else:
+        try:
+            print(splitted_input)
+            if len(splitted_input[1][2:]) != 40:
+                print('launch error, address must be 40 alfanumeric hash')
+            else:
+                re.search('0x[0-9,aA-zZ]{40}', splitted_input[1]).group(0)
+        except IndexError:
+            print('there is not enough data to verify current input')
+            pass
+
 
 if __name__ == '__main__':
     main()
+    # eval_function('isOwn')
+    # eval_function('isOwner')
+    # eval_function('isOwner 0xe982E462b094850F12AF9421bE9D0E9C')
+    # eval_function('isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C')
+
