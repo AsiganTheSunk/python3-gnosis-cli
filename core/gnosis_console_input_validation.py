@@ -6,7 +6,7 @@ from core.logger.custom_logger import CustomLogger
 from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
 from logging import INFO, DEBUG, WARNING
 import logging
-from core.constants.default_messages import CONTRACT_ADDRESS_LENGTH, TX_ADDRESS_LENGTH, INFURA_API_KEY_LENGTH, ETHERSCAN_API_KEY_LENGTH
+from core.constants.default_values import CONTRACT_ADDRESS_LENGTH, TX_ADDRESS_LENGTH, INFURA_API_KEY_LENGTH, ETHERSCAN_API_KEY_LENGTH
 import re
 
 class GnosisConsoleInputValidation:

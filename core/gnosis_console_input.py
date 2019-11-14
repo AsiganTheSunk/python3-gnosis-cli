@@ -23,6 +23,18 @@ from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
 from logging import INFO, DEBUG, WARNING
 import logging
 
+gnosis_safe_cli_completer = WordCompleter([
+    'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
+    'current_time', 'current_timestamp', 'default',
+    'delete', 'without'], ignore_case=True)
+
+style = Style.from_dict({
+    'completion-menu.completion': 'bg:#008888 #ffffff',
+    'completion-menu.completion.current': 'bg:#00aaaa #000000',
+    'scrollbar.background': 'bg:#88aaaa',
+    'scrollbar.button': 'bg:#222222',
+})
+
 class GnosisConsoleInput:
     def __init__(self, logging_lvl=INFO):
         self.name = self.__class__.__name__
@@ -44,19 +56,7 @@ class GnosisConsoleInput:
         # Custom Logger Console/File Handler Configuration
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
-        pass
 
-gnosis_safe_cli_completer = WordCompleter([
-    'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
-    'current_time', 'current_timestamp', 'default',
-    'delete', 'without'], ignore_case=True)
-
-style = Style.from_dict({
-    'completion-menu.completion': 'bg:#008888 #ffffff',
-    'completion-menu.completion.current': 'bg:#00aaaa #000000',
-    'scrollbar.background': 'bg:#88aaaa',
-    'scrollbar.button': 'bg:#222222',
-})
 
 def main():
     # connection = sqlite3.connect(database)

@@ -7,9 +7,10 @@ project_api_key = 'https://mainnet.infura.io/v3/b3fa360a82cd459e8f1b459b3cf9127c
 test_safe_addr = '0x522715235d66faeF072509697445A66B442faD88'
 
 web3 = Web3(Web3.HTTPProvider(project_api_key))
-# print(web3.isConnected())
+print(web3.isConnected())
 # print(web3.eth.blockNumber)
 balance = web3.eth.getBalance(test_safe_addr)
+print(balance)
 
 address = "0xf79cb3BEA83BD502737586A6E8B133c378FD1fF2"
 contract = web3.eth.contract(address=address, abi=test_abi_contract)
@@ -18,13 +19,13 @@ contract = web3.eth.contract(address=address, abi=test_abi_contract)
 # print(contract.address)
 
 current_abi_function = contract.functions.__dict__
-for item in current_abi_function['abi']:
-    print(item['name'])
-    print(item['inputs'])
-    try:
-        print(item['outputs'])
-    except Exception as err:
-        pass
+# for item in current_abi_function['abi']:
+#     print(item['name'])
+#     print(item['inputs'])
+#     try:
+#         print(item['outputs'])
+#     except Exception as err:
+#         pass
 
 # contractAddress = '0x3c7bec02bd4fa73dce24413d2a13c02e1a91e858'
 # print(web3.eth.blockNumber)
