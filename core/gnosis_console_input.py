@@ -24,7 +24,7 @@ from prompt_toolkit.validation import Validator
 gnosis_safe_cli_completer = WordCompleter([
     'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
     'current_time', 'current_timestamp', 'default',
-    'delete', 'without'], ignore_case=True)
+    'delete','exit', 'quit', 'without'], ignore_case=True)
 
 style = Style.from_dict({
     'completion-menu.completion': 'bg:#008888 #ffffff',
@@ -34,25 +34,16 @@ style = Style.from_dict({
 })
 
 
-def eval_function(value, function_name=''):
-    print(function_name)
-    print('current_value:', value[len(function_name):])
-    try:
-        print(value)
-        if len(value[1][2:]) != 40:
-            print('launch error, address must be 40 alfanumeric hash')
-        else:
-            print('evaluando re')
-            re.search('0x[0-9,aA-zZ]{42}', value).group(0)
-    except Exception as err: # IndexError:
-        print(err)
-        print('there is not enough data to verify current input')
-        pass
+def eval_function_old(param, param_type):
+    """ Eval Function (Deprecated)
 
-def eval_function_old(value='isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C'):
-
+    isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C
+    :param param:
+    :param param_type:
+    :return:
+    """
     try:
-        splitted_input = value.split(' ')
+        splitted_input = param.split(' ')
     except TypeError:
         pass
     else:
@@ -67,6 +58,84 @@ def eval_function_old(value='isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C'
             pass
         return splitted_input[1]
 
+
+def validate_byte_byte32_input(param, param_type):
+    """"""
+    # bytes32
+    return
+
+
+def string_to_byte(data):
+    """ String To Byte (Hex)
+
+    :param data:
+    :return:
+    """
+    if len(data) > 8:
+        byte8 = data[:8]
+    else:
+        byte8 = data.ljust(8, '0')
+    return bytes(byte8, 'utf-8')
+
+
+def string_to_bytes32(data):
+    """ String To Bytes32 (Hex)
+
+    :param data:
+    :return:
+    """
+    if len(data) > 32:
+        bytes32 = data[:32]
+    else:
+        bytes32 = data.ljust(32, '0')
+    return bytes(bytes32, 'utf-8')
+
+
+def validate_address_input(param):
+    """ Validate Address Input
+
+    :param param:
+    :return:
+    """
+    try:
+        if '0x' in param:
+            if len(param[1][2:]) != 40:
+                re.search('0x[0-9,aA-zZ]{40}', param).group(0)
+                return True, ''
+            return False, 'Not a valid address (Does not have 40 alphanumeric values).'
+        return False, 'Not a valid address (Does not start with 0x).'
+    except Exception as err:
+        print(err)
+        return False, 'Not a valid address (Unable to parse param).'
+
+
+def validate_integer_input(param, param_type):
+    """ Validate Integer Input
+
+    :param param:
+    :param param_type:
+    :return:
+    """
+    # use hex()
+    # address payable 160
+    # address 256
+    if param_type == 'uint8' and param <= 255:
+        return True, ''
+    elif param_type == 'uint16' and param <= 65535:
+        return True, ''
+    elif param_type == 'uint32' and param <= 4294967295:
+        return True, ''
+    elif param_type == 'uint64'and param <= 18446744073709551615:
+        return True, ''
+    elif param_type == 'uint128'and param <= 340282366920938463463374607431768211455:
+        return True, ''
+    elif param_type == 'uint160'and param <= 1461501637330902918203684832716283019655932542975:
+        return True, ''
+    elif param_type == 'uint256'and param <= 115792089237316195423570985008687907853269984665640564039457584007913129639935:
+        return True, ''
+    return False, 'Not a valid {0} (Does not fit the current type for the function input)'.format(param_type)
+
+
 def is_valid_address(text):
     return '0x' in text
 
@@ -75,22 +144,25 @@ validator = Validator.from_callable(
     is_valid_address, error_message='Not a valid address (Does not contain an 0x).', move_cursor_to_end=True
 )
 
-# Code Reference: https://github.com/prompt-toolkit/python-prompt-toolkit/tree/master/examples/prompts
 
+# Code Reference: https://github.com/prompt-toolkit/python-prompt-toolkit/tree/master/examples/prompts
+# todo: Remove crappy code from the current class GnosisConosleInput
 class GnosisConsoleInput:
     def run(self, session_completer=gnosis_safe_cli_completer, contract_interface=None, current_contract=None):
+        """ Gnosis Console Input
+
+        :param session_completer:
+        :param contract_interface:
+        :param current_contract:
+        :return:
+        """
         session = PromptSession(completer=session_completer, style=style)
         while True:
             try:
-                current_function_call = ''
-                #text = session.prompt('(gnosis-safe-cli)> ')
-                # Validate when pressing ENTER.
-                #text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=False)
-                #print('You said: %s' % text)
+                # text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=True)
+                # text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=False)
 
-                # While typing
-                #text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=True)
-                #text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=False)
+                current_function_call = ''
                 text = session.prompt('(gnosis-safe-cli)> ')
                 try:
                     for item in contract_interface:
@@ -114,26 +186,16 @@ class GnosisConsoleInput:
                                         print(eval(current_function)())
                                     except Exception as err:
                                         print(err)
-
-                            #print(eval(current_function_call)())
-
-
-                except Exception as err: # KeyError
+                except Exception as err:  # KeyError
                     print(err)
                     continue
 
+                if text == 'exit':
+                    raise EOFError
+                elif text == 'quit':
+                    raise EOFError
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
                 break  # Control-D pressed.
-
-        # with connection:
-        #     try:
-        #         messages = connection.execute(text)
-        #     except Exception as e:
-        #         print(repr(e))
-        #     else:
-        #         for message in messages:
-        #             print(message)
-
         print('GoodBye!')

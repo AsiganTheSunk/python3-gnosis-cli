@@ -31,18 +31,10 @@ from core.gnosis_console_input import GnosisConsoleInput
 from prompt_toolkit.completion import WordCompleter
 
 gnosis_safe_cli_completer = [
-    'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
-    'current_time', 'current_timestamp', 'default',
-    'delete', 'without']
-
-
-
-def string_to_bytes32(data):
-    if len(data) > 32:
-        myBytes32 = data[:32]
-    else:
-        myBytes32 = data.ljust(32, '0')
-    return bytes(myBytes32, 'utf-8')
+    'safe_addr', 'add', 'after', 'all', 'before', 'check',
+    'current_date', 'current_time', 'current_timestamp',
+    'default', 'delete', 'exit', 'quit', 'without'
+]
 
 
 def compile_contracts(contracts_path):
@@ -92,43 +84,17 @@ def main():
 
     for item in gnosis_safe_interface:
         gnosis_safe_cli_completer.append(gnosis_safe_interface[item]['function_name'])
-
+        print(gnosis_safe_interface[item]['function_input'])
 
     print(gnosis_safe_cli_completer)
     gnosis_cli = GnosisConsoleInput()
     current_provider = ganache_provider.get_current_provider()
     gnosis_cli.run(WordCompleter(gnosis_safe_cli_completer, ignore_case=True), gnosis_safe_interface, current_contract_instance)
-    # bug: provider does not seem to get the .eth module generating a exception
+
     # infura_provider = InfuraProvider('mainnet')
     # infura_provider.get_contract(test_address_contract, test_abi_contract)
-
-    # infura_provider = InfuraProvider('rinkeby')
-    # infura_provider.get_contract(test_address_contract, test_abi_contract)
-
-import re
-
-def eval_function_old(value='isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C'):
-
-    try:
-        splitted_input = value.split(' ')
-    except TypeError:
-        pass
-    else:
-        try:
-            print(splitted_input)
-            if len(splitted_input[1][2:]) != 40:
-                print('launch error, address must be 40 alfanumeric hash')
-            else:
-                re.search('0x[0-9,aA-zZ]{40}', splitted_input[1]).group(0)
-        except IndexError:
-            print('there is not enough data to verify current input')
-            pass
 
 
 if __name__ == '__main__':
     main()
-    # eval_function('isOwn')
-    # eval_function('isOwner')
-    # eval_function('isOwner 0xe982E462b094850F12AF9421bE9D0E9C')
-    # eval_function('isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C')
 
