@@ -17,8 +17,9 @@ import subprocess
 project_directory = os.getcwd() + '/testing_assets/safe-contracts-1.1.0/'
 contracts_sol_directory = project_directory + 'contracts/'
 contracts_abi_directory = project_directory + 'build/contracts/'
-
+proxy_factory_abi = contracts_abi_directory + 'ProxyFactory.json'
 safe_address_deployment = '0xe982E462b094850F12AF94d21D470e21bE9D0E9C'
+proxy_factory_address_deployment = '0xCfEB869F69431e42cdB54A4F4f105C19C080A601'
 
 gnosis_safe_abi = contracts_abi_directory + 'GnosisSafe.json'
 proxy_abi = contracts_abi_directory + 'Proxy.json'
@@ -67,6 +68,7 @@ def main():
     compile_contracts(contracts_sol_directory)
     print('Current PATH: ', gnosis_safe_abi)
     ABI_SAFE = read_abi_file(gnosis_safe_abi)
+    ABI_PROXY_FACTORY = read_abi_file(proxy_factory_abi)
     import time
     time.sleep(1)
     ganache_provider = GanacheProvider()
@@ -82,14 +84,15 @@ def main():
 
     current_contract_instance, gnosis_safe_interface = ganache_provider.get_contract_interface(safe_address_deployment, ABI_SAFE)
 
-    for item in gnosis_safe_interface:
-        gnosis_safe_cli_completer.append(gnosis_safe_interface[item]['function_name'])
-        print(gnosis_safe_interface[item]['function_input'])
 
-    print(gnosis_safe_cli_completer)
-    gnosis_cli = GnosisConsoleInput()
-    current_provider = ganache_provider.get_current_provider()
-    gnosis_cli.run(WordCompleter(gnosis_safe_cli_completer, ignore_case=True), gnosis_safe_interface, current_contract_instance)
+    # for item in gnosis_safe_interface:
+    #     gnosis_safe_cli_completer.append(gnosis_safe_interface[item]['function_name'])
+    #     print(gnosis_safe_interface[item]['function_input'])
+    #
+    # print(gnosis_safe_cli_completer)
+    # gnosis_cli = GnosisConsoleInput()
+    # current_provider = ganache_provider.get_current_provider()
+    # gnosis_cli.run(WordCompleter(gnosis_safe_cli_completer, ignore_case=True), gnosis_safe_interface, current_contract_instance)
 
     # infura_provider = InfuraProvider('mainnet')
     # infura_provider.get_contract(test_address_contract, test_abi_contract)

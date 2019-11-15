@@ -34,7 +34,7 @@ style = Style.from_dict({
 })
 
 
-def eval_function_old(param, param_type):
+def eval_function_old(param, param_type=None):
     """ Eval Function (Deprecated)
 
     isOwner 0xe982E462b094850F12AF94d21D470e21bE9D0E9C
