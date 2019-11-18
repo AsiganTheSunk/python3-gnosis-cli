@@ -67,8 +67,6 @@ def gnosis_test():
     print('\nBasic Transfer Calls Withing Ganache Accounts, Random Account & Proxy Safe')
     print('---------' * 10)
 
-    # gnosis_safe_module.standard_safe_transaction()
-
     account = Account.create()
     random_account_address = account.address
     random_private_key = account.privateKey
