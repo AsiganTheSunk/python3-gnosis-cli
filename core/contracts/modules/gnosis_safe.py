@@ -26,7 +26,7 @@ class GnosisSafeModule:
         return
 
 
-    def setup(self, _provider, contract_abi, contract_address):
+    def setup(self, _provider, deployed_contract):
         """ Setup
         This function will setup the Gnosis Safe Contract
 

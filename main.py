@@ -29,6 +29,7 @@ mock_contract_abi = contracts_abi_directory + 'MockContract.json'
 mock_token_abi = contracts_abi_directory + 'Token.json'
 
 
+
 from core.providers.utils.build_contract_reader import BuildContractReader
 from core.gnosis_console_input import GnosisConsoleInput
 from prompt_toolkit.completion import WordCompleter
@@ -53,17 +54,26 @@ def compile_contracts(contracts_path):
         print(err)
         return False
 
+from core.contracts.contract_interface import ContractInterface
 
 def main():
-    build_contract_reader = BuildContractReader()
-    # Compile Contracts
-    compile_contracts(contracts_sol_directory)
-    print('Current PATH: ', gnosis_safe_abi)
-    ABI_SAFE = build_contract_reader.read_from(gnosis_safe_abi)
-    ABI_PROXY_FACTORY = build_contract_reader.read_from(proxy_factory_abi)
-    import time
-    time.sleep(1)
     ganache_provider = GanacheProvider()
+
+    contract_interface = ContractInterface(ganache_provider.get_current_provider(), project_directory, ['GnosisSafe'], ['Proxy'])
+    contract_interface.compile_source_files()
+    contract_interface.deploy_contract()
+
+    #build_contract_reader = BuildContractReader()
+    # Compile Contracts
+    #compile_contracts(contracts_sol_directory)
+
+
+    # print('Current PATH: ', gnosis_safe_abi)
+    # ABI_SAFE = build_contract_reader.read_from(gnosis_safe_abi)
+    # ABI_PROXY_FACTORY = build_contract_reader.read_from(proxy_factory_abi)
+    # import time
+    # time.sleep(1)
+
 
     # Todo: make a list on build directory if it does not exist when the function is called, the contracts will
     #  be compiled via subprocess using truffle compile this is maily because the current versions for py-solcx
@@ -74,7 +84,7 @@ def main():
     mock_contract_instance = ''
     mock_token_instance = ''
 
-    current_contract_instance, gnosis_safe_interface = ganache_provider.get_contract_interface(safe_address_deployment, ABI_SAFE)
+    # current_contract_instance, gnosis_safe_interface = ganache_provider.get_contract_interface(safe_address_deployment, ABI_SAFE)
 
 
     # for item in gnosis_safe_interface:

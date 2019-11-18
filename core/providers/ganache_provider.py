@@ -39,7 +39,7 @@ from core.providers.utils.build_contract_reader import BuildContractReader
 
 
 build_contract_reader = BuildContractReader()
-ABI_PROXY, BYTE_CODE_PROXY = build_contract_reader.read_from(proxy_abi)
+# ABI_PROXY, BYTE_CODE_PROXY = build_contract_reader.read_from(proxy_abi)
 
 # note: Contract Operations
 #  + When ever we need to operate with the current contract, doing a operation

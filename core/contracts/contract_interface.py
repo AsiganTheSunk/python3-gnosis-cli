@@ -13,6 +13,8 @@ from solc import compile_files as compile_files2
 from web3.providers.eth_tester import EthereumTesterProvider
 from web3 import Web3
 
+from core.providers.constants.contract_contants import NULL_ADDRESS
+
 from subprocess import Popen, PIPE
 
 from core.contracts.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HARD_MIGRATE, TRUFFLE_SOFT_MIGRATE
@@ -32,13 +34,13 @@ class ContractInterface:
     # install_solc('v0.5.0')
     default_vars_path = os.path.join(os.getcwd(), 'deployment_variables.json')
 
-    def __init__(self, provider, contract_directory, max_deploy_gas=500000, max_tx_gas=50000):
+    def __init__(self, _provider, _contract_directory, _deployment_contract_list, _proxy_contract_list, max_deploy_gas=500000, max_tx_gas=50000):
         """Accepts contract, directory, and an RPC connection and sets defaults
 
         Parameters:
-            provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
-            contract_deploy_directory (str): name of the contract you want to interface with
-            contract_directory (path): location of Solidity source files
+            _provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
+            _deployment_contract_list (str): name of the contract you want to interface with
+            _contract_directory (path): location of Solidity source files
             max_deploy_gas (int): max gas to use on deploy, see 'deploy_contract'
             max_tx_gas (int): max gas to use for transactions, see 'send'
             deployment_vars_path (path): default path for storing deployment variables
@@ -47,15 +49,16 @@ class ContractInterface:
         first key pair/account in ganache) for all send parameters
         """
 
-        self.provider = provider
-        self.contract_directory = contract_directory
-        self.contract_build_directory = contract_directory + 'build/'
-        self.contract_to_deploy = []
-        self.deployment_contract_list = None
+        self.provider = _provider
+        self.contract_directory = _contract_directory + 'contracts/'
+        self.contract_build_directory = _contract_directory + 'build/contracts/'
+        self.deployment_contract_list = _deployment_contract_list
+        self.compiled_contract_list = []
         self.max_deploy_gas = max_deploy_gas
         self.max_tx_gas = max_tx_gas
-        self.provider.eth.defaultAccount = provider.eth.coinbase
+        self.provider.eth.defaultAccount = _provider.eth.coinbase
         self.build_contract_reader = BuildContractReader()
+        self.proxy_contract_list = _proxy_contract_list
 
     def compile_source_files(self):
         """Compiles 'contract_to_deploy' from specified contract.
@@ -70,28 +73,52 @@ class ContractInterface:
 
         try:
             # try-catch for Exceptions on truffle commands while using subprocess
-            Popen('cd {contract_path}; {truffle_command}'.format(
+            print('start compile')
+            p = Popen('cd {contract_path}; {truffle_command}'.format(
                 contract_path=self.contract_directory, truffle_command=TRUFFLE_COMPILE), stdout=PIPE, shell=True)
-
+            p.wait()
+            print('finish compile')
             try:
                 # If compile process is properly finished, map the build folder to get abi, bytecode and address data
                 for root, directories, files in os.walk(self.contract_directory):
                     for file in files:
 
-                        self.deployment_contract_list.append(os.path.abspath(os.path.join(root, file)))
+                        self.compiled_contract_list.append(os.path.abspath(os.path.join(root, file)))
                         print('INFO : ', os.path.abspath(os.path.join(root, file)))
 
-                print('Successfully compiled {number_of_files} contract files'.format(number_of_files=len(self.deployment_contract_list)))
+                print('Successfully compiled {number_of_files} contract files'.format(number_of_files=len(self.compiled_contract_list)))
             # Todo: Add Proper Exception Catching so in case of fatal can be raised to the top
             except Exception as err:
-                pass
+                print('inner loop compile sources', err)
 
             return True
         except Exception as err:
             print(err)
             return False
 
-    def deploy_contract(self, deployment_params=None):
+
+    def __deploy_contract(self, root, file, address_to_proxy=NULL_ADDRESS):
+        print('Deploying Contract', file[:-len('.json')])
+        # First we retrieve the current contract_abi & contract_byte code from .json build file
+        contract_abi, contract_bytecode = self.build_contract_reader.read_from(os.path.abspath(os.path.join(root, file)))
+
+        # Tmp Contract to make the deployment transaction
+        tmp_contract = self.provider.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+
+        if address_to_proxy != NULL_ADDRESS:
+            # Submit the transaction deploying the contract, calling the constructor for the proxy
+            tx_hash = tmp_contract.constructor(address_to_proxy).transact()
+            # Wait for the transaction to be mined, and get the transaction receipt
+            tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
+            return {'contract_abi': contract_abi, 'contract_bytecode': contract_bytecode, 'contract_address':  tx_receipt.contractAddress}
+
+        # Submit the transaction that deploys the contract
+        tx_hash = tmp_contract.constructor().transact()
+        # Wait for the transaction to be mined, and get the transaction receipt
+        tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
+        return {'abi': contract_abi, 'bytecode': contract_bytecode, 'address':  tx_receipt.contractAddress}
+
+    def deploy_contract(self):
         """Deploys contract specified by 'contract_to_deploy'
 
         Estimates deployment gas and compares that to max_deploy_gas before
@@ -105,44 +132,74 @@ class ContractInterface:
             eth.sendTransaction for more info.
         """
 
-
-        try:
-            self.deployment_contract_list is not None
-        except AttributeError:
+        contract_data = {}
+        print('SELF COMPILED: ', self.compiled_contract_list is [])
+        if self.compiled_contract_list is []:
             print('Source files not compiled, compiling now and trying again...')
-            self.compile_source_files()
+            try:
+                self.compile_source_files()
+            # Todo: set a compiling truffle exception, same for deployment + fatal
+            except Exception as err:
+                print(err)
 
         try:
             # try-catch for Exceptions on truffle commands while using subprocess
-            Popen('cd {contract_path}; {truffle_command}'.format(
+            print('start migration')
+            p = Popen('cd {contract_path}; {truffle_command}'.format(
                 contract_path=self.contract_directory, truffle_command=TRUFFLE_HARD_MIGRATE), stdout=PIPE, shell=True)
+            p.wait()
+            print('finished migration')
             try:
-                for compiled_contract in self.deployment_contract_list:
-                    if compiled_contract in self.contract_to_deploy:
-                        contract_abi, contract_bytecode = self.build_contract_reader.read_from(compiled_contract)
-                        deployment = self.provider.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+                print('Compile Contract List: ', self.compiled_contract_list)
+                print('Deployment Contract List: ', self.deployment_contract_list)
+                for root, directories, files in os.walk(self.contract_build_directory):
+                    for file in files:
 
-                    # deployment_estimate = deployment.constructor().estimateGas(transaction=deployment_params)
+                        for to_deploy_contracts in self.deployment_contract_list:
+                            if to_deploy_contracts == file[:-len('.json')]:
+                                main_contract = file[:-len('.json')]
+                                contract_data[main_contract] = self.__deploy_contract(root, file)
+                                print(contract_data[main_contract]['address'])
+                            # if to_deploy_contracts == file[:-len('.json')]:
+                            #     print('Deploying Contract ', file[:-len('.json')])
+                            #     contract_abi, contract_bytecode = self.build_contract_reader.read_from(
+                            #         os.path.abspath(os.path.join(root, file)))
+                            #     tmp_contract = self.provider.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+                            #     # Submit the transaction that deploys the contract
+                            #     tx_hash = tmp_contract.constructor().transact()
+                            #
+                            #     # Wait for the transaction to be mined, and get the transaction receipt
+                            #     tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
+                            #
+                            #     deployed_contract = self.provider.eth.contract(address=tx_receipt.contractAddress, abi=contract_abi)
+                            #     print('Address:', tx_receipt.contractAddress)
+                                if self.proxy_contract_list is not []:
+                                    for proxy_item in self.proxy_contract_list:
+                                        contract_data[proxy_item] = self.__deploy_contract(root, proxy_item + '.json', contract_data[file[:-len('.json')]]['address'])
+                                        print(contract_data)
+                                    # contract_abi, contract_bytecode = self.build_contract_reader.read_from(
+                                    #     os.path.abspath(os.path.join(root, file)))
+                                    # tmp_contract = self.provider.eth.contract(abi=contract_abi,
+                                    #                                           bytecode=contract_bytecode)
+                                    # # Submit the transaction that deploys the contract
+                                    # tx_hash = tmp_contract.constructor(tx_receipt.contractAddress).transact()
+                                    #
+                                    # # Wait for the transaction to be mined, and get the transaction receipt
+                                    # proxy_tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
+                                    #
+                                    # deployed_contract = self.provider.eth.contract(address=proxy_tx_receipt.contractAddress, abi=contract_abi)
+                                    # print('Address:', proxy_tx_receipt.contractAddress)
 
-                    # if deployment_estimate < self.max_deploy_gas:
-                    #     tx_hash = deployment.constructor().transact(transaction=deployment_params)
 
-                    # tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
-                    # contract_address = tx_receipt['contractAddress']
+
                     #
-                    # print("Deployed {0} to: {1} using {2} gas.".format(self.contract_to_deploy, contract_address, tx_receipt['cumulativeGasUsed']))
+                    #
 
-                    # vars = {
-                    #     'contract_address' : contract_address,
-                    #     'contract_abi' : deployment_compiled['abi']
-                    # }
 
-                    with open (self.deployment_vars_path, 'w') as write_file:
-                        json.dump(vars, write_file, indent=4)
 
-                    print(f"Address and interface ABI for {self.contract_to_deploy} written to {self.deployment_vars_path}")
             except Exception as err:
                 print(err)
+                pass
 
         except Exception as err:
             print(err)
@@ -165,8 +222,7 @@ class ContractInterface:
         try:
             self.contract_address = vars['contract_address']
         except ValueError(
-            f"No address found in {self.deployment_vars_path}, please call 'deploy_contract' and try again."
-            ):
+            f"No address found in {self.deployment_vars_path}, please call 'deploy_contract' and try again."):
             raise
 
         contract_bytecode_length = len(self.provider.eth.getCode(self.contract_address).hex())
@@ -186,88 +242,19 @@ class ContractInterface:
 
         return self.contract_instance
 
-    def send (self, function_, *tx_args, event=None, tx_params=None):
-        """Contract agnostic transaction function with extras
 
-        Builds a transaction, estimates its gas and compares that to max_tx_gas
-        defined on init. Sends the transaction, waits for the receipt and prints
-        a number of values about the transaction. If an event is supplied, it
-        will capture event output, clean it, and return it.
 
-        Parameters:
-            function_(str): name of the function in your contract you wish to
-            send the transaction to
-            tx_args(list): non-keyworded function arguments to be supplied
-            in the order they are defined in contract source
-            event(str): name of event (if any) you expect to be emmitted from
-            contract
-            tx_params(dict): optional dictionary for overloading the
-            default deployment transaction parameters. See web3.py's
-            eth.sendTransaction for more info.
+    # def retrieve(self, function_, *call_args, tx_params=None):
+    #     """Contract.function.call() with cleaning"""
+    #
+    #     fxn_to_call = getattr(self.contract_instance.functions, function_)
+    #     built_fxn = fxn_to_call(*call_args)
+    #
+    #     return_values = built_fxn.call(transaction=tx_params)
+    #
+    #     if type(return_values) == bytes:
+    #         return_values = return_values.decode('utf-8').rstrip("\x00")
+    #
+    #     return return_values
 
-        Returns:
-            receipt(AttributeDict): immutable dict containing various
-            transaction outputs
-            cleaned_events(dict): optional output of cleaned event logs
-        """
 
-        fxn_to_call = getattr(self.contract_instance.functions, function_)
-        built_fxn = fxn_to_call(*tx_args)
-
-        gas_estimate = built_fxn.estimateGas(transaction=tx_params)
-        print(f"Gas estimate to transact with {function_}: {gas_estimate}\n")
-
-        if gas_estimate < self.max_tx_gas:
-
-            print(f"Sending transaction to {function_} with {tx_args} as arguments.\n")
-
-            tx_hash = built_fxn.transact(transaction=tx_params)
-
-            receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
-
-            print((
-                f"Transaction receipt mined with hash: {receipt['transactionHash'].hex()} "
-                f"on block number {receipt['blockNumber']} "
-                f"with a total gas usage of {receipt['cumulativeGasUsed']}\n"
-                ))
-
-            if event is not None:
-
-                event_to_call = getattr(self.contract_instance.events, event)
-                raw_log_output = event_to_call().processReceipt(receipt)
-                indexed_events = clean_logs(raw_log_output)
-
-                return receipt, indexed_events
-
-            else:
-                return receipt
-
-        else:
-            print("Gas cost exceeds {}".format(self.max_tx_gas))
-
-    def retrieve (self, function_, *call_args, tx_params=None):
-        """Contract.function.call() with cleaning"""
-
-        fxn_to_call = getattr(self.contract_instance.functions, function_)
-        built_fxn = fxn_to_call(*call_args)
-
-        return_values = built_fxn.call(transaction=tx_params)
-
-        if type(return_values) == bytes:
-            return_values = return_values.decode('utf-8').rstrip("\x00")
-
-        return return_values
-
-def clean_logs(log_output):
-    indexed_events = log_output[0]['args']
-    cleaned_events = {}
-    for key, value in indexed_events.items():
-        if type(value) == bytes:
-            try:
-                cleaned_events[key] = value.decode('utf-8').rstrip("\x00")
-            except UnicodeDecodeError:
-                cleaned_events[key] = Web3.toHex(value)
-        else:
-            cleaned_events[key] = value
-    print(f"Indexed Events: {cleaned_events}")
-    return cleaned_events
