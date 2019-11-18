@@ -26,27 +26,27 @@ class GnosisSafeModule:
         return
 
 
-    def setup(self,  _provider, contract_abi, contract_bytecode, contract_address):
+    def setup(self, _provider, contract_abi, contract_address):
         """ Setup
         This function will setup the Gnosis Safe Contract
 
-        :param _provider:
-        :param contract_abi:
-        :param contract_bytecode:
-        :param contract_address:
-        :return:
+            :param _provider:
+            :param contract_abi:
+            :param contract_address:
+            :return:
         """
+        current_provider = _provider.get_current_provider()
         gnosis_safe_contract_abi, gnosis_safe_contract_bytecode = self.build_contract_reader.read_from()
         gnosis_proxy_contract_abi, gnosis_safe_contract_bytecode = self.build_contract_reader.read_from()
 
-        gnosis_safe_contract = _provider.eth.contract(address=Web3.toChecksumAddress(contract_address), abi=contract_abi)
-        gnosis_proxy_contract = _provider.eth.contract(bytecode=BYTE_CODE_PROXY, abi=ABI_PROXY)
+        gnosis_safe_contract = current_provider.eth.contract(address=Web3.toChecksumAddress(contract_address), abi=contract_abi)
+        gnosis_proxy_contract = current_provider.eth.contract(bytecode=BYTE_CODE_PROXY, abi=ABI_PROXY)
 
         try:
             # Completing Setup
-            account0 = _provider.eth.accounts[0]
-            account1 = _provider.eth.accounts[1]
-            account2 = _provider.eth.accounts[2]
+            account0 = current_provider.eth.accounts[0]
+            account1 = current_provider.eth.accounts[1]
+            account2 = current_provider.eth.accounts[2]
             list_of_accounts = [account0, account1, account2]
 
             # master_safe_copy = current_contract.functions.setup(list_of_accounts, 3, '0x' + '0'*40, bytes('0x', 'utf-8'), account0, account0, 0, account0).transact({'from':account1})
@@ -59,8 +59,8 @@ class GnosisSafeModule:
             # Setting up the contract address to the proxy to aim at
             tx_hash = gnosis_proxy_contract.constructor(gnosis_safe_contract.address).transact({'from': account1})
             self.logger.info('Proxy Safe Setup Done!!')
-            tx_receipt = _provider.eth.waitForTransactionReceipt(tx_hash)
-            new_proxy_trans = _provider.eth.contract(address=tx_receipt.contractAddress, abi=contract_abi)
+            tx_receipt = current_provider.eth.waitForTransactionReceipt(tx_hash)
+            new_proxy_trans = current_provider.eth.contract(address=tx_receipt.contractAddress, abi=contract_abi)
 
             tx_proxy = new_proxy_trans.functions.setup(
                 list_of_accounts, 2, NULL_ADDRESS, bytes('0x', 'utf-8'),
@@ -77,16 +77,16 @@ class GnosisSafeModule:
     def standard_safe_query(self):
         return
 
-    def standard_safe_transaction(self, _provider, _account_to, account_from_private_key, _account_from, ether_value=1):
+    def standard_safe_transaction(self, _provider, _account_to, _account_from_private_key, _account_from, _ether_value=1):
         """ Standard Safe Transaction
         This function will ...
 
-        :param _provider:
-        :param _account_to:
-        :param account_from_private_key:
-        :param _account_from:
-        :param ether_value:
-        :return:
+            :param _provider:
+            :param _account_to:
+            :param _account_from_private_key:
+            :param _account_from:
+            :param _ether_value:
+            :return:
         """
         try:
             signed_txn = _provider.eth.account.signTransaction(
@@ -95,8 +95,8 @@ class GnosisSafeModule:
                     gasPrice=_provider.eth.gasPrice,
                     gas=100000,
                     to=str(_account_to),
-                    value=_provider.toWei(ether_value, 'ether')
-                    ), account_from_private_key
+                    value=_provider.toWei(_ether_value, 'ether')
+                    ), _account_from_private_key
             )
             signed_txn_hash = _provider.eth.sendRawTransaction(signed_txn.rawTransaction)
             return signed_txn_hash
