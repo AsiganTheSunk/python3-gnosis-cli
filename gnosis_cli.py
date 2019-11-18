@@ -8,6 +8,8 @@ from core.gnosis_console_input import GnosisConsoleInput
 # Import Click Package
 import click
 
+import main as m
+
 
 @click.command()
 @click.option(
@@ -66,13 +68,11 @@ def gnosis_cli(network, network_id, network_params, contract, address, api_key, 
     :param script:
     :return:
     """
-    gnosis_cli = GnosisConsoleInputValidation()
-    gnosis_cli.input_api_key_validation(api_key)
-    gnosis_cli.input_address_validation(address)
-    gnosis_cli.input_network_validation(network, network_id, network_params)
-
+    # gnosis_cli = GnosisConsoleInputValidation()
+    # gnosis_cli.input_api_key_validation(api_key)
+    # gnosis_cli.input_address_validation(address)
+    # gnosis_cli.input_network_validation(network, network_id, network_params)
+    print('-------' * 10)
+    print('[ Summary ]: Input Commands')
     print(network, network_id, network_params, contract, address, api_key, script)
-
-
-if __name__ == '__main__':
-    gnosis_cli()
+    # bug: does not properly run the functions provided

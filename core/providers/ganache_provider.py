@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# reference: (Ethereum Interface) https://medium.com/hackernoon/creating-a-python-ethereum-interface-part-1-4d2e47ea0f4d
-# reference: (Safe Code) https://github.com/gnosis/safe-contracts/blob/development/test/gnosisSafeDeploymentViaTx.js
-# reference: (Safe Project) https://github.com/gnosis/safe-contracts
+
 
 # Import Os Package
 import os
@@ -31,29 +29,6 @@ from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
 from logging import INFO, DEBUG, WARNING
 import logging
 
-# Import Json
-import json
-
-# Import Build Contract Reader
-from core.providers.utils.build_contract_reader import BuildContractReader
-
-
-build_contract_reader = BuildContractReader()
-# ABI_PROXY, BYTE_CODE_PROXY = build_contract_reader.read_from(proxy_abi)
-
-# note: Contract Operations
-#  + When ever we need to operate with the current contract, doing a operation
-#  that modifies the contract, 'transact()' must be used
-#  + When ever we need to operate with the current contract, doing a operation
-#  that queries the contract, 'call()' must be used
-
-# note: Setup Method 1:
-#  - Deployment of GnosisSafe
-#    + init via gnosis_safe_contract.setup().transact()
-#  - Deployment of Proxy
-#   + init via proxy_contract.contructor().transact()
-
-
 class GanacheProvider:
     def __init__(self, logging_lvl=INFO, gui=False):
         self.name = self.__class__.__name__
@@ -61,6 +36,7 @@ class GanacheProvider:
         self.network_name = 'ganache'
         self.address = 'http://127.0.0.1'
         self.uri = '{0}:{1}'.format(self.address, self.port)
+        self.provider = None
 
         self.logger = CustomLogger(self.name, logging_lvl)
 
@@ -106,13 +82,26 @@ class GanacheProvider:
             return '7545'
         return '8545'
 
-    def get_current_provider(self):
+    def get_provider(self):
         """ Get Current Provider
         This function will return a provider using the uri generated in the Init.
 
             :return: Provider for the Blockchain Network
         """
-        return Web3(Web3.HTTPProvider(self.uri, request_kwargs={'timeout': 60}))
+        try:
+            if self.provider is None:
+                provider = Web3(Web3.HTTPProvider(self.uri, request_kwargs={'timeout': 60}))
+                provider_status = provider.isConnected()
+                if provider_status:
+                    self.logger.info('{provider} connection stablished to {network} network via endpoint {uri}'.format(
+                        provider=self.name, network=self.network_name, uri=self.uri
+                    ))
+                    self.provider = provider
+                    return provider
+                raise Exception # review: remove this as soon as posible, just for functioning as of right now
+            return self.provider
+        except Exception as err:
+            print('{provider} unable to retrieve a valid connection'.format(provider=self.name), err)
 
     def get_account_information(self, deterministic=True):
         """ Get Account Information
@@ -127,235 +116,35 @@ class GanacheProvider:
         #   Otherwise if the client wants to launch more accounts, just parse based on the param for the ganacha-cli
         return {}
 
-    def get_contract_interface(self, contract_address, contract_abi):
-        """ Get Contract Interface
-        This function
+    # Todo: Map Events Properly, and remove them from the list of functions
+    def map_contract_methods(self, contract_instance):
+        """ Map Contract functions
 
-            :param contract_address:
-            :param contract_abi:
-            :return:
+        :param contract_instance:
+        :return:
         """
-        current_contract = None
-        current_provider = None
-        current_status = False
-        functions_contract_data = {}
+        item_name = ''
+        item_input = ''
+        contract_methods = {}
         try:
-            try:
-                current_provider = Web3(Web3.HTTPProvider(self.uri, request_kwargs={'timeout': 60}))
-                current_status = current_provider.isConnected()
-                self.logger.info('{0} stablishing connection to {1} network via {2}'.format(self.name, self.network_name, self.uri))
-            except Exception as err:
-                print('{provider} unable to retrieve provider'.format(provider=self.name), err)
-            try:
-                if current_status is False:
-                    self.logger.info('{0} is not connected to {1}'.format(self.name, self.network_name))
-                    return {}
-                self.logger.info('{0} has successfully established a connection to {1} network'.format(self.name, self.network_name))
-                current_contract = current_provider.eth.contract(address=Web3.toChecksumAddress(contract_address), abi=contract_abi)
-                proxy_contract = current_provider.eth.contract(bytecode=BYTE_CODE_PROXY, abi=ABI_PROXY)
-
+            for index, item in enumerate(contract_instance.functions.__dict__['abi']):
                 try:
-                    # Completing Setup
-                    account0 = current_provider.eth.accounts[0]
-                    account1 = current_provider.eth.accounts[1]
-                    account2 = current_provider.eth.accounts[2]
-                    list_of_accounts = [account0, account1, account2]
+                    item_name = item['name']
+                except KeyError:
+                    continue
+                try:
+                    item_input = item['inputs']
+                except KeyError:
+                    item_input = ''
 
-                    # master_safe_copy = current_contract.functions.setup(list_of_accounts, 3, '0x' + '0'*40, bytes('0x', 'utf-8'), account0, account0, 0, account0).transact({'from':account1})
+                contract_methods[index] = {
+                    'function_name': item_name,
+                    'function_call_clean': 'contract_instance.functions.{0}({1}).call',
+                    'function_call': 'contract_instance.functions.{}().call'.format(item['name']),
+                    'function_input': item_input
+                }
 
-                    self.logger.info('Master Safe Copy Setup  Done!!')
-                    print('address to master_safe_copy: ', current_contract.address)
-                    # print(current_contract.functions.getOwners().call())
-                    # print(current_contract.functions.getThreshold().call())
-
-                    # Setting up the contract address to the proxy to aim at
-                    tx_hash = proxy_contract.constructor(current_contract.address).transact({'from': account1})
-                    self.logger.info('Proxy Safe Setup Done!!')
-                    tx_receipt = current_provider.eth.waitForTransactionReceipt(tx_hash)
-                    new_proxy_trans = current_provider.eth.contract(address=tx_receipt.contractAddress, abi=contract_abi)
-
-                    # define null_address
-                    NULL_ADDRESS = '0x' + '0'*40
-                    tx_proxy = new_proxy_trans.functions.setup(list_of_accounts, 2, NULL_ADDRESS, bytes('0x', 'utf-8'), NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account1})
-
-                    new_proxy_address = str(tx_receipt.contractAddress)
-                    print('Proxy Addr: ', new_proxy_address)
-
-                    print('Testing Basic Calls')
-                    print(new_proxy_trans.functions.NAME().call())
-                    print(new_proxy_trans.functions.VERSION().call())
-                    print(new_proxy_trans.functions.isOwner('0xe982E462b094850F12AF94d21D470e21bE9D0E9C').call())
-                    print(new_proxy_trans.functions.isOwner('0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1').call())
-                    print(new_proxy_trans.functions.getThreshold().call())
-                    print(new_proxy_trans.functions.getOwners().call())
-
-                    account = Account.create()
-
-                    new_account_address = account.address
-                    new_account_private_key = account.privateKey
-
-                    # note: block of multisign
-                    #  txHash = await gnosisSafe.getTransactionHash(to, value, data, operation, 0, 0, 0, 0, 0, nonce)
-                    nonce_safe = new_proxy_trans.nonce()
-                    print(nonce_safe)
-                    # # txHash = new_proxy_trans.functions.getTransactionHash().call()
-                    aprove_tx = ''
-                    # Based On the Threshold
-                    # owner1_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-                    # owner2_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-                    # new_proxy_trans.functions.approveHash(txHash).transact()
-                    # new_proxy_trans.functions.approveHash(txHash).transact()
-                    new_proxy_trans.functions.execTransaction()
-
-                    print('tx_transaction: ', )
-                    print('Generate Account() with Random Address: ', new_account_address)
-
-                    print('-------'*10)
-                    print('Current Balance for Safe Proxy Account: ', current_provider.eth.getBalance(str(tx_receipt.contractAddress)))
-                    print('Current Balance for New Account: ', current_provider.eth.getBalance(str(new_account_address)))
-                    print('Current Balance for Ganache Account: ', current_provider.eth.getBalance(str(account2)))
-                    print('-------' * 10)
-
-                    private_key_account2 = '0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c'
-                    signed_txn = current_provider.eth.account.signTransaction(dict(
-                        nonce=current_provider.eth.getTransactionCount(str(account2)),
-                        gasPrice=current_provider.eth.gasPrice,
-                        gas=100000,
-                        to=str(new_account_address),
-                        value=current_provider.toWei(1, 'ether')
-                    ),
-                        private_key_account2)
-
-                    signed_txn_hash = current_provider.eth.sendRawTransaction(signed_txn.rawTransaction)
-
-                    print('-------'*10)
-                    print('Current Balance for Safe Proxy Account: ', current_provider.eth.getBalance(str(tx_receipt.contractAddress)))
-                    print('Current Balance for New Account: ', current_provider.eth.getBalance(str(new_account_address)))
-                    print('Current Balance for Ganache Account: ', current_provider.eth.getBalance(str(account2)))
-                    print('-------' * 10)
-
-                    new_acc_signed_txn = current_provider.eth.account.signTransaction(dict(
-                        nonce=current_provider.eth.getTransactionCount(str(new_account_address)),
-                        gasPrice=current_provider.eth.gasPrice,
-                        gas=100000,
-                        to=str(tx_receipt.contractAddress),
-                        value=current_provider.toWei(0.9, 'ether')
-                    ),
-                        new_account_private_key)
-
-                    new_acc_signed_txn_hash = current_provider.eth.sendRawTransaction(new_acc_signed_txn.rawTransaction)
-
-                    print('-------'*10)
-                    print('Current Balance for Safe Proxy Account: ', current_provider.eth.getBalance(str(tx_receipt.contractAddress)))
-                    print('Current Balance for New Account: ', current_provider.eth.getBalance(str(new_account_address)))
-                    print('Current Balance for Ganache Account: ', current_provider.eth.getBalance(str(account2)))
-                    print('-------' * 10)
-
-                    deterministic_accounts = self.get_account_information()
-                    try:
-                        print()
-                        # new_proxy_trans.functions
-
-                        # safe_signed_txn = current_provider.eth.account.signTransaction(dict(
-                        #     nonce=current_provider.eth.getTransactionCount(str(tx_receipt.contractAddress)),
-                        #     gasPrice=current_provider.eth.gasPrice,
-                        #     gas=100000,
-                        #     to=str(tx_receipt.contractAddress),
-                        #     value=current_provider.toWei(0.9, 'ether')
-                        # ),
-                        #     private_key_account2)
-                        #
-                        # new_acc_signed_txn_hash = current_provider.eth.sendRawTransaction(safe_signed_txn.rawTransaction)
-                    except Exception as err:
-                        print('This should fail')
-                        print(err)
-                    #
-                    # accountTarget = str(tx_receipt.contractAddress)
-                    # accountList = [
-                    #     deterministic_accounts['account_1']['address'],
-                    #     deterministic_accounts['account_2']['address']]
-                    # privatekeys = [
-                    #     deterministic_accounts['account_1']['private_key'],
-                    #     deterministic_accounts['account_2']['private_key']
-                    # ]
-                    #
-                    # for i in range(0, len(accountList)):
-                    #     transaction = {
-                    #         'to': accountTarget,
-                    #         'value': current_provider.toWei(1, 'ether'),
-                    #         'gas': 200000,
-                    #         'gasPrice': current_provider.eth.gasPrice,
-                    #         'nonce': current_provider.eth.getTransactionCount(current_provider.toChecksumAddress(accountList[i])),
-                    #         'chainId': 1
-                    #     }
-                    #
-                    #     signed = current_provider.eth.account.signTransaction(transaction, privatekeys[i])
-                    #     current_provider.eth.sendRawTransaction(signed.rawTransaction)
-
-                    # note: Tx Transfer from Safe:
-                    #  CALL=0 Withdraw
-                    #  nonce = await gnosisSafe.nonce()
-                    #  txHash = await gnosisSafe.getTransactionHash(to, value, data, operation, 0, 0, 0, 0, 0, nonce)
-                    #  executeDataWithoutSignatures = gnosisSafe.contract.execTransaction.getData(to, value, data, operation, 0, 0, 0, 0, 0, "0x")
-                    #  approveData = gnosisSafe.contract.approveHash.getData(txHash)
-                    #  for i in accounts:
-                    #       sigs += "000000000000000000000000" + i.replace('0x', '') + "0000000000000000000000000000000000000000000000000000000000000000" + "01"
-                    #  executeDataUsedSignatures = gnosisSafe.contract.execTransaction.getData(to, value, data, operation, 0, 0, 0, 0, 0, sigs)
-                    #  tx = gnosisSafe.execTransaction(to, value, data, operation, 0, 0, 0, 0, 0, sigs, {from: txSender})
-                    #  _
-                    #  executeTransaction('executeTransaction withdraw 0.5 ETH', [accounts[0], accounts[2]], accounts[0], web3.toWei(0.5, 'ether'), "0x", CALL)
-                    #  _
-                    #  ethSign = async function(account, hash) {
-                    #     return new Promise(function(resolve, reject) {
-                    #     web3.currentProvider.sendAsync({
-                    #         jsonrpc: "2.0",
-                    #         method: "eth_sign",
-                    #         params: [account, hash],
-                    #         id: new Date().getTime()
-                    #     }, function(err, response)
-
-
-                except Exception as err:
-                    print('SETUP FAILED ', err)
-
-                item_name = ''
-                item_input = ''
-
-                for index, item in enumerate(current_contract.functions.__dict__['abi']):
-                    try:
-                        item_name = item['name']
-                    except KeyError:
-                        continue
-                    try:
-                        item_input = item['inputs']
-                    except KeyError:
-                        item_input = ''
-
-                    functions_contract_data[index] = {
-                        'function_name': item_name,
-                        'function_call_clean': 'current_contract.functions.{0}({1}).call',
-                        'function_call': 'current_contract.functions.{}().call'.format(item['name']),
-                        'function_input': item_input
-                    }
-
-            except Exception as err:
-                print(err)
-            self.logger.info('{0} has successfully retrieved {1} elements from current contract'.format(self.name, len(
-                functions_contract_data)))
-            return current_contract, functions_contract_data
-
-            # current_threshold = current_contract.functions.getThreshold().call()
-            # print('Current Threshold: ', current_threshold)
-            # current_account = current_provider.eth.accounts[1]
-            # # print(current_provider.eth.accounts[0])
-            # current_owners = current_contract.functions.isOwner('0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1').call()
-            # print('isOwner: ', current_owners)
-            # current_name = current_contract.functions.NAME().call()
-            # print('Name: ', current_name)
-            # current_version = current_contract.functions.VERSION().call()
-            # print('Version: ', current_version)
-            # current_modules = current_contract.functions.setup().call()
-            # print('Version: ', current_modules)
-
+            self.logger.info('{0} has successfully retrieved {1} elements from current contract'.format(self.name, len(contract_methods)))
+            return contract_methods
         except Exception as err:
             print(err)

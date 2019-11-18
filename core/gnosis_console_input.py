@@ -156,11 +156,11 @@ class GnosisConsoleInput:
         self.main_console_session = ''
         self.contract_console_session = []
 
-    def run(self, session_completer=gnosis_safe_cli_completer, contract_interface=None, current_contract=None):
+    def run(self, contract_methods, contract_instance, session_completer=gnosis_safe_cli_completer):
         """ Gnosis Console Input
 
         :param session_completer:
-        :param contract_interface:
+        :param contract_methods:
         :param current_contract:
         :return:
         """
@@ -172,10 +172,14 @@ class GnosisConsoleInput:
 
                 current_function_call = ''
                 text = session.prompt('(gnosis-safe-cli)> ')
+                if text == 'exit':
+                    raise EOFError
+                elif text == 'quit':
+                    raise EOFError
                 try:
-                    for item in contract_interface:
-                        if contract_interface[item]['function_name'] in text:
-                            current_function_call = contract_interface[item]['function_call']
+                    for item in contract_methods:
+                        if contract_methods[item]['function_name'] in text:
+                            current_function_call = contract_methods[item]['function_call']
                             print('Contract Call to: %s' % current_function_call)
 
                             # Todo: remove this piece of not so very good just so really bad code, this is only to showcase early functionallity
@@ -183,14 +187,14 @@ class GnosisConsoleInput:
                             if splitted_input == 1:
                                 print(eval(current_function_call)())
                             else:
-                                for data in contract_interface[item]['function_input']:
+                                for data in contract_methods[item]['function_input']:
                                     try:
-                                        function_schema = contract_interface[item]['function_call_clean']
+                                        function_schema = contract_methods[item]['function_call_clean']
                                         # Todo: base de eval process in a list of input validations, based on the function_input stored in the current_dict for contract interface
 
                                         params = '\'' + eval_function_old(text) + '\''
-                                        current_function = function_schema.format(contract_interface[item]['function_name'], params)
-                                        print(function_schema.format(contract_interface[item]['function_name'], params))
+                                        current_function = function_schema.format(contract_methods[item]['function_name'], params)
+                                        print(function_schema.format(contract_methods[item]['function_name'], params))
                                         print(eval(current_function)())
                                     except Exception as err:
                                         print(err)
@@ -198,12 +202,8 @@ class GnosisConsoleInput:
                     print(err)
                     continue
 
-                if text == 'exit':
-                    raise EOFError
-                elif text == 'quit':
-                    raise EOFError
             except KeyboardInterrupt:
                 continue  # Control-C pressed. Try again.
             except EOFError:
                 break  # Control-D pressed.
-        print('GoodBye!')
+        print('(gnosis-safe-cli)> GoodBye!')
