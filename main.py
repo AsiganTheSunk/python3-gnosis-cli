@@ -14,7 +14,7 @@ import subprocess
 # safe_team_address = '0x6B1133AeCdF2CeB239CE2b88C0375421786323c4'
 # safe_address0 = '0x1A5F9352Af8aF974bFC03399e3767DF6370d82e4'
 
-project_directory = os.getcwd() + '/testing_assets/safe-contracts-1.1.0/'
+project_directory = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 contracts_sol_directory = project_directory + 'contracts/'
 contracts_abi_directory = project_directory + 'build/contracts/'
 proxy_factory_abi = contracts_abi_directory + 'ProxyFactory.json'
@@ -28,6 +28,8 @@ proxy_factory_abi = contracts_abi_directory + 'ProxyFactory.json'
 mock_contract_abi = contracts_abi_directory + 'MockContract.json'
 mock_token_abi = contracts_abi_directory + 'Token.json'
 
+
+from core.providers.utils.build_contract_reader import BuildContractReader
 from core.gnosis_console_input import GnosisConsoleInput
 from prompt_toolkit.completion import WordCompleter
 
@@ -37,12 +39,12 @@ gnosis_safe_cli_completer = [
     'default', 'delete', 'exit', 'quit', 'without'
 ]
 
+TRUFFLE_SOFT_MIGRATE = 'truffle migrate'
+TRUFFLE_HARD_MIGRATE = 'truffle migrate --reset'
+
 
 def compile_contracts(contracts_path):
     TRUFFLE_COMPILE = 'truffle compile'
-    TRUFFLE_SOFT_MIGRATE = 'truffle migrate'
-    TRUFFLE_HARD_MIGRATE = 'truffle migrate --reset'
-
     try:
         subprocess.Popen('cd {contract_path}; {truffle_compile}'.format(
             contract_path=contracts_path, truffle_compile=TRUFFLE_COMPILE), stdout=subprocess.PIPE, shell=True)
@@ -52,23 +54,13 @@ def compile_contracts(contracts_path):
         return False
 
 
-def read_abi_file(path_to_abi):
-        try:
-            with open(path_to_abi) as f:
-                info_json = json.load(f)
-            print(info_json["contractName"], 'ABI has been provided as an endpoint to generate the interface with the contract')
-            abi = info_json["abi"]
-            return abi
-        except Exception as err:
-            print(err)
-
-
 def main():
+    build_contract_reader = BuildContractReader()
     # Compile Contracts
     compile_contracts(contracts_sol_directory)
     print('Current PATH: ', gnosis_safe_abi)
-    ABI_SAFE = read_abi_file(gnosis_safe_abi)
-    ABI_PROXY_FACTORY = read_abi_file(proxy_factory_abi)
+    ABI_SAFE = build_contract_reader.read_from(gnosis_safe_abi)
+    ABI_PROXY_FACTORY = build_contract_reader.read_from(proxy_factory_abi)
     import time
     time.sleep(1)
     ganache_provider = GanacheProvider()

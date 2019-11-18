@@ -13,7 +13,13 @@ from solc import compile_files as compile_files2
 from web3.providers.eth_tester import EthereumTesterProvider
 from web3 import Web3
 
-class ContractInterface(object):
+from subprocess import Popen, PIPE
+
+from core.contracts.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HARD_MIGRATE, TRUFFLE_SOFT_MIGRATE
+
+from core.providers.utils.build_contract_reader import BuildContractReader
+
+class ContractInterface:
     """A convenience interface for interacting with ethereum smart contracts
 
     This interface will handle a main contract and it's dependencies. All it
@@ -26,20 +32,12 @@ class ContractInterface(object):
     # install_solc('v0.5.0')
     default_vars_path = os.path.join(os.getcwd(), 'deployment_variables.json')
 
-    def __init__(
-        self,
-        web3,
-        contract_to_deploy,
-        contract_directory,
-        max_deploy_gas=500000,
-        max_tx_gas=50000,
-        deployment_vars_path=default_vars_path
-        ):
+    def __init__(self, provider, contract_directory, max_deploy_gas=500000, max_tx_gas=50000):
         """Accepts contract, directory, and an RPC connection and sets defaults
 
         Parameters:
-            web3 (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
-            contract_to_deploy (str): name of the contract you want to interface with
+            provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
+            contract_deploy_directory (str): name of the contract you want to interface with
             contract_directory (path): location of Solidity source files
             max_deploy_gas (int): max gas to use on deploy, see 'deploy_contract'
             max_tx_gas (int): max gas to use for transactions, see 'send'
@@ -49,13 +47,15 @@ class ContractInterface(object):
         first key pair/account in ganache) for all send parameters
         """
 
-        self.web3 = web3
-        self.contract_to_deploy = contract_to_deploy
+        self.provider = provider
         self.contract_directory = contract_directory
+        self.contract_build_directory = contract_directory + 'build/'
+        self.contract_to_deploy = []
+        self.deployment_contract_list = None
         self.max_deploy_gas = max_deploy_gas
         self.max_tx_gas = max_tx_gas
-        self.deployment_vars_path = deployment_vars_path
-        self.web3.eth.defaultAccount = web3.eth.coinbase
+        self.provider.eth.defaultAccount = provider.eth.coinbase
+        self.build_contract_reader = BuildContractReader()
 
     def compile_source_files(self):
         """Compiles 'contract_to_deploy' from specified contract.
@@ -68,19 +68,28 @@ class ContractInterface(object):
             for every contract in contract_directory
         """
 
-        deployment_list = []
-        for root, directories, files in os.walk(self.contract_directory):
-            for file in files:
-                print('ADDED : ', os.path.abspath(os.path.join(root, file)))
+        try:
+            # try-catch for Exceptions on truffle commands while using subprocess
+            Popen('cd {contract_path}; {truffle_command}'.format(
+                contract_path=self.contract_directory, truffle_command=TRUFFLE_COMPILE), stdout=PIPE, shell=True)
 
-                deployment_list.append(os.path.abspath(os.path.join(root, file)))
+            try:
+                # If compile process is properly finished, map the build folder to get abi, bytecode and address data
+                for root, directories, files in os.walk(self.contract_directory):
+                    for file in files:
 
-        kwargs = {'--allowed-paths': '*'}
-        self.all_compiled_contracts = compile_files(deployment_list, **kwargs)
+                        self.deployment_contract_list.append(os.path.abspath(os.path.join(root, file)))
+                        print('INFO : ', os.path.abspath(os.path.join(root, file)))
 
-        print("Compiled contract keys:\n{}".format(
-            '\n'.join(self.all_compiled_contracts.keys()
-            )))
+                print('Successfully compiled {number_of_files} contract files'.format(number_of_files=len(self.deployment_contract_list)))
+            # Todo: Add Proper Exception Catching so in case of fatal can be raised to the top
+            except Exception as err:
+                pass
+
+            return True
+        except Exception as err:
+            print(err)
+            return False
 
     def deploy_contract(self, deployment_params=None):
         """Deploys contract specified by 'contract_to_deploy'
@@ -96,44 +105,47 @@ class ContractInterface(object):
             eth.sendTransaction for more info.
         """
 
+
         try:
-            self.all_compiled_contracts is not None
+            self.deployment_contract_list is not None
         except AttributeError:
-            print("Source files not compiled, compiling now and trying again...")
+            print('Source files not compiled, compiling now and trying again...')
             self.compile_source_files()
 
-        for compiled_contract_key in self.all_compiled_contracts.keys():
-            if self.contract_to_deploy in compiled_contract_key:
-                deployment_compiled = self.all_compiled_contracts[compiled_contract_key]
+        try:
+            # try-catch for Exceptions on truffle commands while using subprocess
+            Popen('cd {contract_path}; {truffle_command}'.format(
+                contract_path=self.contract_directory, truffle_command=TRUFFLE_HARD_MIGRATE), stdout=PIPE, shell=True)
+            try:
+                for compiled_contract in self.deployment_contract_list:
+                    if compiled_contract in self.contract_to_deploy:
+                        contract_abi, contract_bytecode = self.build_contract_reader.read_from(compiled_contract)
+                        deployment = self.provider.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
 
-                deployment = self.web3.eth.contract(
-                    abi=deployment_compiled['abi'],
-                    bytecode=deployment_compiled['bin']
-                    )
+                    # deployment_estimate = deployment.constructor().estimateGas(transaction=deployment_params)
 
-                deployment_estimate = deployment.constructor().estimateGas(transaction=deployment_params)
+                    # if deployment_estimate < self.max_deploy_gas:
+                    #     tx_hash = deployment.constructor().transact(transaction=deployment_params)
 
-                if deployment_estimate < self.max_deploy_gas:
-                    tx_hash = deployment.constructor().transact(transaction=deployment_params)
+                    # tx_receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
+                    # contract_address = tx_receipt['contractAddress']
+                    #
+                    # print("Deployed {0} to: {1} using {2} gas.".format(self.contract_to_deploy, contract_address, tx_receipt['cumulativeGasUsed']))
 
-                tx_receipt = self.web3.eth.waitForTransactionReceipt(tx_hash)
-                contract_address = tx_receipt['contractAddress']
+                    # vars = {
+                    #     'contract_address' : contract_address,
+                    #     'contract_abi' : deployment_compiled['abi']
+                    # }
 
-                print("Deployed {0} to: {1} using {2} gas.".format(
-                    self.contract_to_deploy,
-                    contract_address,
-                    tx_receipt['cumulativeGasUsed']
-                    ))
+                    with open (self.deployment_vars_path, 'w') as write_file:
+                        json.dump(vars, write_file, indent=4)
 
-                vars = {
-                    'contract_address' : contract_address,
-                    'contract_abi' : deployment_compiled['abi']
-                }
+                    print(f"Address and interface ABI for {self.contract_to_deploy} written to {self.deployment_vars_path}")
+            except Exception as err:
+                print(err)
 
-                with open (self.deployment_vars_path, 'w') as write_file:
-                    json.dump(vars, write_file, indent=4)
-
-                print(f"Address and interface ABI for {self.contract_to_deploy} written to {self.deployment_vars_path}")
+        except Exception as err:
+            print(err)
 
     def get_instance(self):
         """Returns a contract instance object from variables in 'deployment_vars'
@@ -157,7 +169,7 @@ class ContractInterface(object):
             ):
             raise
 
-        contract_bytecode_length = len(self.web3.eth.getCode(self.contract_address).hex())
+        contract_bytecode_length = len(self.provider.eth.getCode(self.contract_address).hex())
 
         try:
             assert (contract_bytecode_length > 4), f"Contract not deployed at {self.contract_address}."
@@ -167,7 +179,7 @@ class ContractInterface(object):
         else:
             print(f"Contract deployed at {self.contract_address}. This function returns an instance object.")
 
-        self.contract_instance = self.web3.eth.contract(
+        self.contract_instance = self.provider.eth.contract(
             abi = vars['contract_abi'],
             address = vars['contract_address']
         )
@@ -211,7 +223,7 @@ class ContractInterface(object):
 
             tx_hash = built_fxn.transact(transaction=tx_params)
 
-            receipt = self.web3.eth.waitForTransactionReceipt(tx_hash)
+            receipt = self.provider.eth.waitForTransactionReceipt(tx_hash)
 
             print((
                 f"Transaction receipt mined with hash: {receipt['transactionHash'].hex()} "

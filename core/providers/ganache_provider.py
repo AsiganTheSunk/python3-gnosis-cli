@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Code Reference: https://medium.com/hackernoon/creating-a-python-ethereum-interface-part-1-4d2e47ea0f4d
-# Safe Code Reference: https://github.com/gnosis/safe-contracts/blob/development/test/gnosisSafeDeploymentViaTx.js
-# Safe Project Reference: https://github.com/gnosis/safe-contracts
+# reference: (Ethereum Interface) https://medium.com/hackernoon/creating-a-python-ethereum-interface-part-1-4d2e47ea0f4d
+# reference: (Safe Code) https://github.com/gnosis/safe-contracts/blob/development/test/gnosisSafeDeploymentViaTx.js
+# reference: (Safe Project) https://github.com/gnosis/safe-contracts
 
+# Import Os Package
 import os
 
 from eth_account import Account
@@ -12,7 +13,7 @@ from core.providers.constants.contract_contants import NULL_ADDRESS
 from core.providers.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
 
 
-project_directory = os.getcwd() + '/testing_assets/safe-contracts-1.1.0/'
+project_directory = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 contracts_sol_directory = project_directory + 'contracts/'
 contracts_abi_directory = project_directory + 'build/contracts/'
 
@@ -56,7 +57,7 @@ ABI_PROXY, BYTE_CODE_PROXY = build_contract_reader.read_from(proxy_abi)
 class GanacheProvider:
     def __init__(self, logging_lvl=INFO, gui=False):
         self.name = self.__class__.__name__
-        self.port = self.select_port(gui)
+        self.port = self.__setup_provider_port(gui)
         self.network_name = 'ganache'
         self.address = 'http://127.0.0.1'
         self.uri = '{0}:{1}'.format(self.address, self.port)
@@ -93,11 +94,12 @@ class GanacheProvider:
         return self._properties[_key]
 
     @staticmethod
-    def select_port(gui):
+    def __setup_provider_port(gui=False):
         ''' Select Port
         Select the current GanacheProvider port based on input values
+
             :param gui: True if ganache is being launched by using the gui otherwise it will be set to False
-            for the ganache-cli
+                for the ganache-cli
             :return: Proper port number
         '''
         if gui:
@@ -107,7 +109,8 @@ class GanacheProvider:
     def get_current_provider(self):
         """ Get Current Provider
         This function will return a provider using the uri generated in the Init.
-        :return: Provider for the Blockchain Network
+
+            :return: Provider for the Blockchain Network
         """
         return Web3(Web3.HTTPProvider(self.uri, request_kwargs={'timeout': 60}))
 
@@ -128,9 +131,9 @@ class GanacheProvider:
         """ Get Contract Interface
         This function
 
-        :param contract_address:
-        :param contract_abi:
-        :return:
+            :param contract_address:
+            :param contract_abi:
+            :return:
         """
         current_contract = None
         current_provider = None

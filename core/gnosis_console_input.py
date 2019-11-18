@@ -21,10 +21,13 @@ from prompt_toolkit.validation import Validator
 # from logging import INFO, DEBUG, WARNING
 # import logging
 
+# Import Console Flags
+from core.constants.default_values import ConsoleSessionTypeFlag as console_flags
+
 gnosis_safe_cli_completer = WordCompleter([
     'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
     'current_time', 'current_timestamp', 'default',
-    'delete','exit', 'quit', 'without'], ignore_case=True)
+    'delete', 'exit', 'quit', 'without'], ignore_case=True)
 
 style = Style.from_dict({
     'completion-menu.completion': 'bg:#008888 #ffffff',
@@ -145,9 +148,14 @@ validator = Validator.from_callable(
 )
 
 
-# Code Reference: https://github.com/prompt-toolkit/python-prompt-toolkit/tree/master/examples/prompts
+# reference: https://github.com/prompt-toolkit/python-prompt-toolkit/tree/master/examples/prompts
 # todo: Remove crappy code from the current class GnosisConosleInput
 class GnosisConsoleInput:
+    def __init__(self):
+        self.name = self.__class__.__name__
+        self.main_console_session = ''
+        self.contract_console_session = []
+
     def run(self, session_completer=gnosis_safe_cli_completer, contract_interface=None, current_contract=None):
         """ Gnosis Console Input
 
