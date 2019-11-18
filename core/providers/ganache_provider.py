@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
-
 # Import Os Package
 import os
 
@@ -10,15 +8,10 @@ from eth_account import Account
 from core.providers.constants.contract_contants import NULL_ADDRESS
 from core.providers.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
 
-
 project_directory = os.getcwd() + '/assets/safe-contracts-1.1.0/'
-contracts_sol_directory = project_directory + 'contracts/'
-contracts_abi_directory = project_directory + 'build/contracts/'
 
-proxy_abi = contracts_abi_directory + 'Proxy.json'
 safe_address_deployment = '0xe982E462b094850F12AF94d21D470e21bE9D0E9C'
 proxy_factory_address_deployment = '0xCfEB869F69431e42cdB54A4F4f105C19C080A601'
-
 
 # Import Web3 Module
 from web3 import Web3
@@ -28,6 +21,11 @@ from core.logger.custom_logger import CustomLogger
 from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
 from logging import INFO, DEBUG, WARNING
 import logging
+
+# Todo: Remove logger, pass the logger from "gnosis_cli" upper classes, not enough out to justify owning a logger.
+# Todo: Fix Doc Information in all the reworked modules.
+# Todo: Create interface for the providers, or move all the functions to a single provider instance with autoconfiguration methods
+
 
 class GanacheProvider:
     def __init__(self, logging_lvl=INFO, gui=False):

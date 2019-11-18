@@ -36,8 +36,11 @@ gnosis_safe_cli_completer = [
     'default', 'delete', 'exit', 'quit', 'without',
 ]
 
+# Todo: Finish the multi sign Transaction for the proxy contract.
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
+
+
 def gnosis_test():
     tx_history = TransactionHistoryManager()
     ganache_provider = GanacheProvider()
