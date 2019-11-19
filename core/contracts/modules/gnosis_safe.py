@@ -27,7 +27,6 @@ from core.providers.utils.build_contract_reader import BuildContractReader
 #  - Deployment of Proxy
 #   + init via proxy_contract.contructor().transact()
 
-
 class GnosisSafeModule:
     """ Gnosis Safe Module
     This module will provide the set of functions needed to interact with the Gnosis Safe through the commandline
@@ -98,6 +97,12 @@ class GnosisSafeModule:
 
     def safe_query(self):
         return
+
+    # todo:
+    # def multi_sign_transaction(self):
+        # pasarle el proxy
+        # pasarle la cuenta random con saldo
+        # getHash de la operacion que queremos
 
 
     # new_account_address = account.address
