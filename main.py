@@ -42,6 +42,23 @@ gnosis_safe_cli_completer = [
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
 
+from ethereum.utils import ecrecover_to_pub
+
+def multi_sign_tx(_signers, _tx_hash):
+    """
+
+    :param self:
+    :param _signers:
+    :param _tx_hash:
+    :return:
+    """
+    account = Account()
+    signature_bytes = ''
+    for private_key in _signers:
+        tx_signature = account._sign_hash(_tx_hash, private_key)
+        signature_bytes += str(tx_signature['r']) + str(tx_signature['s']) + str(tx_signature['v'])
+
+    return bytes(signature_bytes, 'utf-8')
 
 def gnosis_test():
     tx_history = TransactionHistoryManager()
@@ -84,6 +101,7 @@ def gnosis_test():
 
     provider = ganache_provider.get_provider()
     account2 = provider.eth.accounts[2]
+    account1 = provider.eth.accounts[1]
     print('-------' * 10)
     print('From Ganache Account To Random Account Transfer')
     print(' + Balance in Safe Proxy Account: ', provider.eth.getBalance(str(contract_artifacts['Proxy']['address'])))
@@ -99,6 +117,7 @@ def gnosis_test():
         value=provider.toWei(1, 'ether')
     )
     private_key_account2 = '0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c'
+    private_key_account1 = '0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1'
     signed_txn = provider.eth.account.signTransaction(tx_data0, private_key_account2)
     tmp_txn_hash = provider.eth.sendRawTransaction(signed_txn.rawTransaction)
 
@@ -139,7 +158,7 @@ def gnosis_test():
     print(tx_history.history)
     print('Done.\n')
 
-    # note: Send Money to a Newly created account in the blockchain, and lastly beetween safes?
+    # note: Send Money to a Newly created account in the network, and lastly beetween safes?
     nonce = provider.eth.getTransactionCount(str(contract_artifacts['Proxy']['address']))
     print('Proxy Address Nonce: ', nonce)
     _multi_sig_to = Account.create()
@@ -150,30 +169,33 @@ def gnosis_test():
     print(' + 2ºRandom Private Key: ', racc_multi_sig_private_key)
     print('Done.\n')
 
-    # node: data y operation buscar
-    _to = racc_multi_sig_address
-    _value = provider.toWei(0.9, 'ether')
-    _data = b''
-    # note: Operation Value Can Be either (Call or DelegateCall) :: No refences in the code to the values because f... reasons.
-    _operation = ''
-
-    # note: values .. (address,uint256, bytes, uint8, uint256, uint256, uint256, address, address, uint256)
-    # note: Operation = 0 // Call - 0 // DelegateCall = 1
     DELEGATE_CALL = 1
     CALL = 0
 
-    txHash = functional_safe.functions.getTransactionHash(_to, _value, _data, DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce)
-    print('Current Transaction Hash: ' + txHash)
+    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), bytes('0x', 'utf-8'), DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
+    print('TxMultiSignHash: ' + str(tx_hash_to_multi_sign))
+    # transaction_hash = codecs.decode(tx_multi_sign_hash, 'hex_codec')
+    signers = [private_key_account1, private_key_account2]
+    multi_signature = multi_sign_tx(signers, tx_hash_to_multi_sign)
+    print('MultiSignature: ' + str(multi_signature))
+
+
+    functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account1})
+    functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account2})
+    try:
+        print('isValidSignature:', functional_safe.functions.isValidSignature(bytes('0x', 'utf-8'), multi_signature).call({'from': account1}))
+    except ValueError:
+        print('Unable to Verify Signature')
+    #functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), bytes('0x', 'utf-8'), DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact()
+
     # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
     # bug: TypeError while passing the txHash for the operation to approve
 
-    encoded_transaction = functional_safe.functions.signMessage(txHash)  # This will be signed by each user that it's an onwer based on the current value in Threshold.
     # Sign Operation: Onwer1, Onwer2 with each private key respectively
 
     # Transaction Flow:
     # reference: https://gnosis-safe.readthedocs.io/en/version_0_0_2/services/relay.html
-    # owner1_signed_message = provider.eth.account.sign_transaction(txHash, private_key='0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d')
-    # owner2_signed_message = provider.eth.account.sign_transaction(txHash, private_key='0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1')
+
     # print('Onwer 1 Sign', owner1_signed_message)
     # print('Owner 2 Sign', owner2_signed_message)
     # print('Done.\n')
