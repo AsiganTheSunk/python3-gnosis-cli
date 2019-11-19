@@ -42,7 +42,19 @@ gnosis_safe_cli_completer = [
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
 
-from ethereum.utils import ecrecover_to_pub
+
+def string_to_bytes32(data):
+    """ String To Bytes32 (Hex)
+
+    :param data:
+    :return:
+    """
+    if len(data) > 32:
+        bytes32 = data[:32]
+    else:
+        bytes32 = data.ljust(32, '0')
+    return bytes(bytes32, 'utf-8')
+
 
 def multi_sign_tx(_signers, _tx_hash):
     """
@@ -53,12 +65,16 @@ def multi_sign_tx(_signers, _tx_hash):
     :return:
     """
     account = Account()
-    signature_bytes = ''
+    signature_bytes_aux = ''
     for private_key in _signers:
-        tx_signature = account._sign_hash(_tx_hash, private_key)
-        signature_bytes += str(tx_signature['r']) + str(tx_signature['s']) + str(tx_signature['v'])
-
-    return bytes(signature_bytes, 'utf-8')
+        tx_signature = account.signHash(_tx_hash, private_key)
+        print(tx_signature['r'], len(str(tx_signature['r'])), hex(tx_signature['r']))
+        print(tx_signature['s'], len(str(tx_signature['s'])), hex(tx_signature['s']))
+        print(tx_signature['v'], len(str(tx_signature['v'])), hex(tx_signature['v']))
+        signature_bytes_aux += hex(tx_signature['r'] + tx_signature['s'] + tx_signature['v'])
+        # signature_bytes_aux += int(tx_signature['r']).to_bytes(32, byteorder='big') + int(tx_signature['s']).to_bytes(32, byteorder='big') + int(tx_signature['v']).to_bytes(32, byteorder='big')
+    print(signature_bytes_aux)
+    return bytes(signature_bytes_aux, 'utf-8')
 
 def gnosis_test():
     tx_history = TransactionHistoryManager()
@@ -172,21 +188,16 @@ def gnosis_test():
     DELEGATE_CALL = 1
     CALL = 0
 
-    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), bytes('0x', 'utf-8'), DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
+    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
     print('TxMultiSignHash: ' + str(tx_hash_to_multi_sign))
     # transaction_hash = codecs.decode(tx_multi_sign_hash, 'hex_codec')
     signers = [private_key_account1, private_key_account2]
     multi_signature = multi_sign_tx(signers, tx_hash_to_multi_sign)
     print('MultiSignature: ' + str(multi_signature))
 
-
     functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account1})
     functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account2})
-    try:
-        print('isValidSignature:', functional_safe.functions.isValidSignature(bytes('0x', 'utf-8'), multi_signature).call({'from': account1}))
-    except ValueError:
-        print('Unable to Verify Signature')
-    #functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), bytes('0x', 'utf-8'), DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact()
+    functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact({'from': account1})
 
     # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
     # bug: TypeError while passing the txHash for the operation to approve
@@ -202,7 +213,6 @@ def gnosis_test():
     # note: The proxy contract implements only two functions: The constructor setting the address of the master copy
     # and the fallback function forwarding all transactions sent to the proxy via a DELEGATECALL to the master copy and
     # returning all data returned by the DELEGATECALL.
-
 
     # print(nonce_safe)
     # txHash = new_proxy_trans.functions.getTransactionHash().call()
@@ -221,7 +231,6 @@ def gnosis_test():
     #     # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
     # gnosis_cli = GnosisConsoleInput()
     # gnosis_cli.run(gnosis_safe_methods, proxy_instance, WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
-
 
 
 def main():
