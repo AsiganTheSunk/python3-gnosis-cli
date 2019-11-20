@@ -144,7 +144,7 @@ def gnosis_test():
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(random_account_address),
-        value=provider.toWei(0.1, 'ether')
+        value=provider.toWei(1.2, 'ether')
     )
     signed_txn = provider.eth.account.signTransaction(tx_data0, private_key_account2)
     tmp_txn_hash = provider.eth.sendRawTransaction(signed_txn.rawTransaction)
@@ -166,7 +166,7 @@ def gnosis_test():
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(contract_artifacts['Proxy']['address']),
-        value=provider.toWei(.09, 'ether')
+        value=provider.toWei(1.1, 'ether')
     )
 
     random_acc_signed_txn = provider.eth.account.signTransaction(tx_data1, random_private_key)
@@ -206,7 +206,7 @@ def gnosis_test():
 
     # VARIABLES IN THE MULTISIGN EXAMPLE
     address_to = multi_sig_address
-    value = provider.toWei(0.8, 'ether')
+    value = provider.toWei(1, 'ether')
     data = b''
     operation = CALL
     safe_tx_gas = 300
@@ -303,7 +303,9 @@ def gnosis_test():
     nonce = functional_safe.functions.nonce().call()
     current_owners = functional_safe.functions.getOwners().call()
     print('Current Owners of the Safe:', current_owners)
-    transaction = functional_safe.functions.removeOwner(current_owners[1], current_owners[2], 1).buildTransaction({'from': orderred_signers[1].address})
+    transaction = functional_safe.functions.addOwnerWithThreshold(multi_sig_address, 3).buildTransaction({'from': orderred_signers[1].address})
+    # transaction = functional_safe.functions.removeOwner(current_owners[1], current_owners[2], 1).buildTransaction({'from': orderred_signers[1].address})
+    # transaction = functional_safe.functions.swapOwner(current_owners[1], current_owners[2], multi_sig_address).buildTransaction({'from': orderred_signers[1].address})
     transaction.update({'gas': base_gas})
     transaction.update({'gasPrice': gas_price})
     transaction.update({'nonce': nonce})
