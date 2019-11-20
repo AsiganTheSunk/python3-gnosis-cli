@@ -254,33 +254,87 @@ def gnosis_test():
     #  functional_safe.functions.removeOwner().call()
     #  functional_safe.functions.swapOwner().call()
 
-    # remark: Transaction Flow Change Threshold from 1 to 2
-    #  Get Account 1
+    # remark: Transaction Flow :: Change Threshold from 2 to 1
+    #  [ Build Transaction ]
+    # nonce = functional_safe.functions.nonce().call()
+    # transaction = functional_safe.functions.changeThreshold(3).buildTransaction({'from': orderred_signers[0].address})
+    # transaction.update({'gas': base_gas})
+    # transaction.update({'gasPrice': gas_price})
+    # transaction.update({'nonce': nonce})
+    #
+    # print('Current Transaction: \n', transaction)
+    # # Using the Payload from buildTransaction, getTransactionHash
+    # tx_change_threshold = functional_safe.functions.getTransactionHash(
+    #     transaction['to'], transaction['value'], transaction['data'], operation, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, nonce
+    # ).call()
+    #
+    # # Sign Transaction Hash
+    # signature_bytes = b''
+    # for signers in orderred_signers:
+    #     tx_signature = signers.signHash(tx_change_threshold)
+    #     signature_bytes += tx_signature['signature']
+    # print('[ Output Signature ]: ' + signature_bytes.hex())
+    #
+    # print(orderred_signers[0].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[0].address).call())
+    # print(orderred_signers[1].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[1].address).call())
+    #
+    # # Approve Transaction Hash
+    # functional_safe.functions.approveHash(tx_change_threshold).transact({'from': orderred_signers[0].address})
+    # functional_safe.functions.approveHash(tx_change_threshold).transact({'from': orderred_signers[1].address})
+    # # Launch Transaction Hash
+    # print('Previous Threshold', functional_safe.functions.getThreshold().call())
+    # change_treshold_hash = functional_safe.functions.execTransaction(
+    #     transaction['to'], transaction['value'], transaction['data'], CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, signature_bytes
+    # ).transact({'from': orderred_signers[0].address})
+    # receipt_for_change_threshold = provider.eth.waitForTransactionReceipt(change_treshold_hash)
+    # print(receipt_for_change_threshold)
+    # print('New Threshold', functional_safe.functions.getThreshold().call())
 
-    #  Build Transaction
-    transaction = functional_safe.functions.changeThreshold(2).buildTransaction({'from': orderred_signers[0].address})
-    transaction.update({'gas': 0})
-    transaction.update({'gasPrice': 0})
+
+
+    # todo: Build a payload with buildTrasaction with gas:0, gasPrices:0, ... to call for the AccountManager in the Safe.
+    #  Then Call execTransaction() with addOwner, removeOwner, SwapOnwer, changeThreshold etc etc
+    #  functional_safe.functions.addOwnerWithThreshold().call()
+    #  functional_safe.functions.removeOwner().call()
+    #  functional_safe.functions.swapOwner().call()
+
+    # remark: Transaction Flow :: Remove Onwer To The Safe
+    #  [ Build Transaction ]
+    nonce = functional_safe.functions.nonce().call()
+    current_owners = functional_safe.functions.getOwners().call()
+    print('Current Owners of the Safe:', current_owners)
+    transaction = functional_safe.functions.removeOwner(current_owners[1], current_owners[2], 1).buildTransaction({'from': orderred_signers[1].address})
+    transaction.update({'gas': base_gas})
+    transaction.update({'gasPrice': gas_price})
     transaction.update({'nonce': nonce})
 
-    print(transaction)
+    print('Current Transaction: \n', transaction)
     # Using the Payload from buildTransaction, getTransactionHash
     tx_change_threshold = functional_safe.functions.getTransactionHash(
-        address_to, value, transaction['data'], operation, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, nonce
+        transaction['to'], transaction['value'], transaction['data'], operation, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, nonce
     ).call()
 
     # Sign Transaction Hash
-    tx_change_threshold_signature = orderred_signers[0].signHash(tx_change_threshold)
-    print('[ Output Signature ]: ' + tx_change_threshold_signature['signature'].hex())
+    signature_bytes = b''
+    for signers in orderred_signers:
+        tx_signature = signers.signHash(tx_change_threshold)
+        signature_bytes += tx_signature['signature']
+    print('[ Output Signature ]: ' + signature_bytes.hex())
+
+    print(orderred_signers[0].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[0].address).call())
+    print(orderred_signers[1].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[1].address).call())
 
     # Approve Transaction Hash
-    # functional_safe.functions.approveHash(tx_change_threshold).transact({'from':  current_account.address})
+    functional_safe.functions.approveHash(tx_change_threshold).transact({'from': orderred_signers[0].address})
+    functional_safe.functions.approveHash(tx_change_threshold).transact({'from': orderred_signers[1].address})
     # Launch Transaction Hash
-    functional_safe.functions.execTransaction(
-        address_to, value, transaction['data'], CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver,
-        tx_change_threshold_signature['signature']
+    change_treshold_hash = functional_safe.functions.execTransaction(
+        transaction['to'], transaction['value'], transaction['data'], CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, signature_bytes
     ).transact({'from': orderred_signers[0].address})
-
+    receipt_for_change_threshold = provider.eth.waitForTransactionReceipt(change_treshold_hash)
+    print(receipt_for_change_threshold)
+    current_owners = functional_safe.functions.getOwners().call()
+    print('Current Owners of the Safe:', current_owners)
 
 def main():
     gnosis_test()
