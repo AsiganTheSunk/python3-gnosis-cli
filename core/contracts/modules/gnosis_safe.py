@@ -55,8 +55,8 @@ class GnosisSafeModule:
             account2 = self.provider.eth.accounts[2]
             list_of_accounts = [account0, account1, account2]
 
-            gnosissafe_instance.functions.setup(list_of_accounts, 3, NULL_ADDRESS, bytes('0x', 'utf-8'), NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
-            proxy_instance.functions.setup(list_of_accounts, 2, NULL_ADDRESS, bytes('0x', 'utf-8'), NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
+            gnosissafe_instance.functions.setup(list_of_accounts, 3, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
+            proxy_instance.functions.setup(list_of_accounts, 2, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
             return proxy_instance
         except Exception as err:
             print(err)

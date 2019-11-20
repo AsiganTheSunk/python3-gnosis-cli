@@ -28,8 +28,8 @@ class ContractInterface:
             _provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
             _deployment_contract_list (str): name of the contract you want to interface with
             _contract_directory (path): location of Solidity source files
-            max_deploy_gas (int): max gas to use on deploy, see 'deploy_contract'
-            max_tx_gas (int): max gas to use for transactions, see 'send'
+            ¿?# max_deploy_gas (int): max gas to use on deploy, see 'deploy_contract'
+            ¿?# max_tx_gas (int): max gas to use for transactions, see 'send'
             deployment_vars_path (path): default path for storing deployment variables
 
         Also sets web3.eth.defaultAccount as the coinbase account (e.g. the
@@ -81,6 +81,13 @@ class ContractInterface:
             return False
 
     def __deploy_contract(self, root, file, contract_to_proxy={}):
+        ''' Deploy Contract
+        This function to setup the proper deploy of the contracts
+            :param root: Root Folder
+            :param file: Root File
+            :param contract_to_proxy: In case the main contract it's deployed with a proxy contract
+            :return: contract artifacts (abi/bytecode)
+        '''
         account0 = self.provider.eth.accounts[0]
         print('---------' * 10)
         print('Start Deploying Contract', file[:-len('.json')])
@@ -111,15 +118,9 @@ class ContractInterface:
     def deploy_contract(self):
         """Deploys contract specified by 'contract_to_deploy'
 
-        Estimates deployment gas and compares that to max_deploy_gas before
-        deploying. Also writes out variables required to create a contract
-        instance to 'deployment_vars' to easily recreate it after exiting
-        program.
-
-        Parameters:
-            deployment_params (dict): optional dictionary for overloading the
-            default deployment transaction parameters. See web3.py's
-            eth.sendTransaction for more info.
+        This function will deploy the contract provided in the initialization of the class
+        (should estimate deployment gas and compares that to max_deploy_gas before
+        deploying.)
         """
         # Todo: set a compiling truffle exception, same for deployment + fatal
         contract_artifacts = {}
@@ -164,6 +165,16 @@ class ContractInterface:
         except Exception as err:
             print(err)
             return {}
+
+
+    def connect_to_instance(self, contract_artifacts, contract_address):
+        ''' Connect To Instance
+        Fucntion connect to a  smart contract, you only need address?
+        :param contract_artifacts:
+        :param contract_address:
+        :return:
+        '''
+        return
 
     def get_instance(self, _contract_artifacts):
         """Returns a contract instance object from variables in 'deployment_vars'

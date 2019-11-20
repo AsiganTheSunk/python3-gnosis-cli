@@ -42,39 +42,33 @@ gnosis_safe_cli_completer = [
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
 
-
-def string_to_bytes32(data):
-    """ String To Bytes32 (Hex)
-
-    :param data:
-    :return:
-    """
-    if len(data) > 32:
-        bytes32 = data[:32]
-    else:
-        bytes32 = data.ljust(32, '0')
-    return bytes(bytes32, 'utf-8')
+# Import Web3
+from web3 import Web3
 
 
-def multi_sign_tx(_signers, _tx_hash):
+def to_32byte_hex(val):
+    return Web3.toHex(Web3.toBytes(val).rjust(32, b'\0'))
+
+
+def multi_sign_tx(signers, _tx_hash):
     """
 
     :param self:
-    :param _signers:
+    :param signers:
     :param _tx_hash:
     :return:
     """
-    account = Account()
-    signature_bytes_aux = ''
-    for private_key in _signers:
-        tx_signature = account.signHash(_tx_hash, private_key)
-        print(tx_signature['r'], len(str(tx_signature['r'])), hex(tx_signature['r']))
-        print(tx_signature['s'], len(str(tx_signature['s'])), hex(tx_signature['s']))
-        print(tx_signature['v'], len(str(tx_signature['v'])), hex(tx_signature['v']))
-        signature_bytes_aux += hex(tx_signature['r'] + tx_signature['s'] + tx_signature['v'])
-        # signature_bytes_aux += int(tx_signature['r']).to_bytes(32, byteorder='big') + int(tx_signature['s']).to_bytes(32, byteorder='big') + int(tx_signature['v']).to_bytes(32, byteorder='big')
-    print(signature_bytes_aux)
-    return bytes(signature_bytes_aux, 'utf-8')
+
+    signature_bytes = b''
+    for private_key in signers:
+        tx_signature = Account.signHash(_tx_hash, private_key)
+        signature_bytes += tx_signature['signature']
+        # ec_recover_args = (msghash, v, r, s) = (Web3.toHex(tx_signature.messageHash), tx_signature.v, to_32byte_hex(tx_signature.r), to_32byte_hex(tx_signature.s))
+    print('[ Output Signature ]: ' + signature_bytes.hex())
+    return signature_bytes
+
+# 0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000
+# 0x519ac607c6c6a7efc4875850dd94ed8481b640690970f5cd7b6f131f3ef0f5450x23f57809a0938c7c61e4ebad27d7bc2580c5ac5592dd9086e6e478d5db2fbed10x000000000000000000000000000000000000000000000000000000000000001b0x55e191536a3a87340489f6b49839411bc8d253503d309c3fab1aaf3e9d1a64180x2f5bad903e2db05329f45b756e13c7a7db839937bef0f5f02c71802254a3cc510x000000000000000000000000000000000000000000000000000000000000001c
 
 def gnosis_test():
     tx_history = TransactionHistoryManager()
@@ -82,7 +76,7 @@ def gnosis_test():
     # review: Fix Type Warning expected str recieved List[str]
     contract_interface = ContractInterface(ganache_provider.get_provider(), PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     # deploy_contract() will call compile_source_files() if the contract is not yet compiled.
-    contract_interface.compile_source_files()
+    #contract_interface.compile_source_files()
     contract_artifacts = contract_interface.deploy_contract()
 
     print(contract_artifacts['GnosisSafe']['address'])
@@ -93,7 +87,7 @@ def gnosis_test():
     gnosis_safe_module = GnosisSafeModule(ganache_provider.get_provider(), contract_artifacts)
     functional_safe = gnosis_safe_module.setup(safe_instance, proxy_instance)
 
-    print('\nTesting Basic Calls')
+    print('\n[ Testing Basic Calls ]')
     print('---------' * 10)
     print(functional_safe.functions.NAME().call())
     print(functional_safe.functions.VERSION().call())
@@ -103,26 +97,26 @@ def gnosis_test():
     print(functional_safe.functions.getOwners().call())
     print('Done.')
 
-    print('\nBasic Transfer Calls Withing Ganache Accounts, Random Account & Proxy Safe')
+    print('\n[ Basic Transfer Calls Withing Ganache Accounts, Random Account & Proxy Safe ]')
     print('---------' * 10)
 
     account = Account.create()
     random_account_address = account.address
     random_private_key = account.privateKey
 
-    print('Generate Account()')
-    print(' + Random Address: ', random_account_address)
-    print(' + Random Private Key: ', random_private_key)
+    print('[ Generate Account() ]')
+    print(' (+) Random Address: ', random_account_address)
+    print(' (+) Random Private Key: ', random_private_key)
     print('Done.\n')
 
     provider = ganache_provider.get_provider()
     account2 = provider.eth.accounts[2]
     account1 = provider.eth.accounts[1]
     print('-------' * 10)
-    print('From Ganache Account To Random Account Transfer')
-    print(' + Balance in Safe Proxy Account: ', provider.eth.getBalance(str(contract_artifacts['Proxy']['address'])))
-    print(' + Balance in Random Account: ', provider.eth.getBalance(str(random_account_address)))
-    print(' + Balance in Ganache Account: ', provider.eth.getBalance(str(account2)))
+    print('[ Summary ]: From Ganache Account To Random Account Transfer')
+    print(' (+) Balance in Safe Proxy Account: ', provider.eth.getBalance(str(contract_artifacts['Proxy']['address'])))
+    print(' (+) Balance in Random Account: ', provider.eth.getBalance(str(random_account_address)))
+    print(' (+) Balance in Ganache Account: ', provider.eth.getBalance(str(account2)))
     print('Done.\n')
 
     tx_data0 = dict(
@@ -175,20 +169,38 @@ def gnosis_test():
     print('Done.\n')
 
     # note: Send Money to a Newly created account in the network, and lastly beetween safes?
-    nonce = provider.eth.getTransactionCount(str(contract_artifacts['Proxy']['address']))
-    print('Proxy Address Nonce: ', nonce)
+    nonce = functional_safe.functions.nonce().call()
     _multi_sig_to = Account.create()
     racc_multi_sig_address = _multi_sig_to.address
     racc_multi_sig_private_key = _multi_sig_to.privateKey
-    print('Generate Account()')
-    print(' + 2ºRandom Address: ', racc_multi_sig_address)
-    print(' + 2ºRandom Private Key: ', racc_multi_sig_private_key)
+    print('[ Generate Account() ]')
+    print(' (+) 2ºRandom Address: ', racc_multi_sig_address)
+    print(' (+)) 2ºRandom Private Key: ', racc_multi_sig_private_key)
     print('Done.\n')
 
+    CREATE = 2
     DELEGATE_CALL = 1
     CALL = 0
 
-    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
+    # Sign should look like this piece of string
+    # let sig = "0x" + "0000000000000000000000000000000000000000000000000000000000000001" + "0000000000000000000000000000000000000000000000000000000000000000" + "01"
+    #
+    # address to,
+    # uint256 value,
+    # bytes calldata data,
+    # Enum.Operation
+    # operation uint256 safeTxGas,
+    # uint256 baseGas,
+    # uint256 gasPrice,
+    # address gasToken,
+    # address payable
+    # refundReceiver,
+    # bytes
+    # calldata
+    #signatures
+
+    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
+
     print('TxMultiSignHash: ' + str(tx_hash_to_multi_sign))
     # transaction_hash = codecs.decode(tx_multi_sign_hash, 'hex_codec')
     signers = [private_key_account1, private_key_account2]
@@ -197,7 +209,8 @@ def gnosis_test():
 
     functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account1})
     functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account2})
-    functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', DELEGATE_CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact({'from': account1})
+
+    functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact({'from': account1})
 
     # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
     # bug: TypeError while passing the txHash for the operation to approve
