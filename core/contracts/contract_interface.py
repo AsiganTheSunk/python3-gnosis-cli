@@ -22,12 +22,12 @@ class ContractInterface:
     methods for transacting and calling with gas checks and event output.
     """
 
-    def __init__(self, _provider, _contract_directory, _deployment_contract_list=[], _proxy_contract_list=[]):
+    def __init__(self, provider, contract_directory, deployment_contract_list=[], proxy_contract_list=[]):
         """Accepts contract, directory, and an RPC connection and sets defaults
         Parameters:
-            _provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
-            _deployment_contract_list (str): name of the contract you want to interface with
-            _contract_directory (path): location of Solidity source files
+            provider (Web3 object): the RPC node you'll make calls to (e.g. geth, ganache-cli)
+            deployment_contract_list (str): name of the contract you want to interface with
+            contract_directory (path): location of Solidity source files
             ¿?# max_deploy_gas (int): max gas to use on deploy, see 'deploy_contract'
             ¿?# max_tx_gas (int): max gas to use for transactions, see 'send'
             deployment_vars_path (path): default path for storing deployment variables
@@ -36,14 +36,14 @@ class ContractInterface:
         first key pair/account in ganache) for all send parameters
         """
 
-        self.provider = _provider
-        self.contract_directory = _contract_directory + 'contracts/'
-        self.contract_build_directory = _contract_directory + 'build/contracts/'
-        self.deployment_contract_list = _deployment_contract_list
+        self.provider = provider
+        self.contract_directory = contract_directory + 'contracts/'
+        self.contract_build_directory = contract_directory + 'build/contracts/'
+        self.deployment_contract_list = deployment_contract_list
         self.compiled_contract_list = []
-        self.provider.eth.defaultAccount = _provider.eth.coinbase
+        self.provider.eth.defaultAccount = provider.eth.coinbase
         self.build_contract_reader = BuildContractReader()
-        self.proxy_contract_list = _proxy_contract_list
+        self.proxy_contract_list = proxy_contract_list
 
     def compile_source_files(self):
         """Compiles 'contract_to_deploy' from specified contract.
@@ -176,7 +176,7 @@ class ContractInterface:
         '''
         return
 
-    def get_instance(self, _contract_artifacts):
+    def get_instance(self, contract_artifacts):
         """Returns a contract instance object from variables in 'deployment_vars'
 
         Checks there is in fact an address saved. Also does a (crude) check
@@ -189,8 +189,8 @@ class ContractInterface:
         """
 
         # review: Web3.toChecksumAddress(contract_address)
-        contract_abi = _contract_artifacts['abi']
-        contract_address = _contract_artifacts['address']
+        contract_abi = contract_artifacts['abi']
+        contract_address = contract_artifacts['address']
         try:
             contract_bytecode_length = len(self.provider.eth.getCode(contract_address).hex())
             assert(contract_bytecode_length > 4)

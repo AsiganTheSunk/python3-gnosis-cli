@@ -2,7 +2,6 @@ class ContractTypeConverter:
     def __init__(self):
         return
 
-
 def string_to_byte(data):
     """ String To Byte (Hex)
 

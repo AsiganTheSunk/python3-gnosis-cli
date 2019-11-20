@@ -50,12 +50,23 @@ def to_32byte_hex(val):
     return Web3.toHex(Web3.toBytes(val).rjust(32, b'\0'))
 
 
-def multi_sign_tx(signers, _tx_hash):
+def call_gnosis_console():
+    # print('Launching Gnosis Console')
+    # gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
+    # for item in gnosis_safe_methods:
+    #     gnosis_safe_cli_completer.append(gnosis_safe_methods[item]['function_name'])
+    #     # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
+    # gnosis_cli = GnosisConsoleInput()
+    # gnosis_cli.run(gnosis_safe_methods, proxy_instance, WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
+    return
+
+
+def multi_sign_tx(signers, tx_hash):
     """
 
     :param self:
     :param signers:
-    :param _tx_hash:
+    :param tx_hash:
     :return:
     """
 
@@ -67,9 +78,9 @@ def multi_sign_tx(signers, _tx_hash):
     print('Ordered Signers', orderred_signers)
     signature_bytes = b''
     for private_key in signers:
-        tx_signature = Account.signHash(_tx_hash, private_key)
+        tx_signature = Account.signHash(tx_hash, private_key)
         signature_bytes += tx_signature['signature']
-        # ec_recover_args = (msghash, v, r, s) = (Web3.toHex(tx_signature.messageHash), tx_signature.v, to_32byte_hex(tx_signature.r), to_32byte_hex(tx_signature.s))
+
     print('[ Output Signature ]: ' + signature_bytes.hex())
     return signature_bytes
 
@@ -79,7 +90,6 @@ def multi_sign_tx(signers, _tx_hash):
 def gnosis_test():
     tx_history = TransactionHistoryManager()
     ganache_provider = GanacheProvider()
-    # review: Fix Type Warning expected str recieved List[str]
     contract_interface = ContractInterface(ganache_provider.get_provider(), PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     # deploy_contract() will call compile_source_files() if the contract is not yet compiled.
     contract_interface.compile_source_files()
@@ -134,7 +144,7 @@ def gnosis_test():
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(random_account_address),
-        value=provider.toWei(10, 'ether')
+        value=provider.toWei(0.1, 'ether')
     )
     signed_txn = provider.eth.account.signTransaction(tx_data0, private_key_account2)
     tmp_txn_hash = provider.eth.sendRawTransaction(signed_txn.rawTransaction)
@@ -156,7 +166,7 @@ def gnosis_test():
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(contract_artifacts['Proxy']['address']),
-        value=provider.toWei(9, 'ether')
+        value=provider.toWei(.09, 'ether')
     )
 
     random_acc_signed_txn = provider.eth.account.signTransaction(tx_data1, random_private_key)
@@ -178,6 +188,10 @@ def gnosis_test():
     print('Done.\n')
 
     # note: Send Money to a Newly created account in the network, and lastly beetween safes?
+    # note: Make Tx from the Safe
+    # reference: https://gnosis-safe.readthedocs.io/en/version_0_0_2/services/relay.html
+    # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
+    # note: The proxy contract implements only two functions: The constructor setting the address of the master copy
     multi_sig_to = Account.create()
     multi_sig_address = multi_sig_to.address
     multi_sig_private_key = multi_sig_to.privateKey
@@ -192,7 +206,7 @@ def gnosis_test():
 
     # VARIABLES IN THE MULTISIGN EXAMPLE
     address_to = multi_sig_address
-    value = provider.toWei(5, 'ether')
+    value = provider.toWei(0.8, 'ether')
     data = b''
     operation = CALL
     safe_tx_gas = 300
@@ -223,8 +237,6 @@ def gnosis_test():
 
     functional_safe.functions.approveHash(tx_hash_multi_sign).transact({'from': account1})
     functional_safe.functions.approveHash(tx_hash_multi_sign).transact({'from': account2})
-
-    # note: Make Tx from the Safe
     functional_safe.functions.execTransaction(
         address_to, value, data, CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, signature_bytes
     ).transact({'from': account1})
@@ -235,18 +247,39 @@ def gnosis_test():
     print(' + Balance in Random Account: ', provider.eth.getBalance(str(address_to)))
     print('Done.\n')
 
-    # Transaction Flow:
-    # reference: https://gnosis-safe.readthedocs.io/en/version_0_0_2/services/relay.html
-    # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
-    # note: The proxy contract implements only two functions: The constructor setting the address of the master copy
 
-    # print('Launching Gnosis Console')
-    # gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
-    # for item in gnosis_safe_methods:
-    #     gnosis_safe_cli_completer.append(gnosis_safe_methods[item]['function_name'])
-    #     # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
-    # gnosis_cli = GnosisConsoleInput()
-    # gnosis_cli.run(gnosis_safe_methods, proxy_instance, WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
+    # todo: Build a payload with buildTrasaction with gas:0, gasPrices:0, ... to call for the AccountManager in the Safe.
+    #  Then Call execTransaction() with addOwner, removeOwner, SwapOnwer, changeThreshold etc etc
+    #  functional_safe.functions.addOwnerWithThreshold().call()
+    #  functional_safe.functions.removeOwner().call()
+    #  functional_safe.functions.swapOwner().call()
+
+    # remark: Transaction Flow Change Threshold from 1 to 2
+    #  Get Account 1
+
+    #  Build Transaction
+    transaction = functional_safe.functions.changeThreshold(2).buildTransaction({'from': orderred_signers[0].address})
+    transaction.update({'gas': 0})
+    transaction.update({'gasPrice': 0})
+    transaction.update({'nonce': nonce})
+
+    print(transaction)
+    # Using the Payload from buildTransaction, getTransactionHash
+    tx_change_threshold = functional_safe.functions.getTransactionHash(
+        address_to, value, transaction['data'], operation, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, nonce
+    ).call()
+
+    # Sign Transaction Hash
+    tx_change_threshold_signature = orderred_signers[0].signHash(tx_change_threshold)
+    print('[ Output Signature ]: ' + tx_change_threshold_signature['signature'].hex())
+
+    # Approve Transaction Hash
+    # functional_safe.functions.approveHash(tx_change_threshold).transact({'from':  current_account.address})
+    # Launch Transaction Hash
+    functional_safe.functions.execTransaction(
+        address_to, value, transaction['data'], CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver,
+        tx_change_threshold_signature['signature']
+    ).transact({'from': orderred_signers[0].address})
 
 
 def main():
