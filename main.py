@@ -59,6 +59,12 @@ def multi_sign_tx(signers, _tx_hash):
     :return:
     """
 
+    very_important_data = [Account.from_key(signers[0]), Account.from_key(signers[1])]
+    print('Input signers', signers)
+    # generar Account y ordenar por address.
+
+    orderred_signers = sorted(very_important_data, key=lambda v: v.address.lower())
+    print('Ordered Signers', orderred_signers)
     signature_bytes = b''
     for private_key in signers:
         tx_signature = Account.signHash(_tx_hash, private_key)
@@ -76,7 +82,7 @@ def gnosis_test():
     # review: Fix Type Warning expected str recieved List[str]
     contract_interface = ContractInterface(ganache_provider.get_provider(), PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     # deploy_contract() will call compile_source_files() if the contract is not yet compiled.
-    #contract_interface.compile_source_files()
+    contract_interface.compile_source_files()
     contract_artifacts = contract_interface.deploy_contract()
 
     print(contract_artifacts['GnosisSafe']['address'])
@@ -112,6 +118,9 @@ def gnosis_test():
     provider = ganache_provider.get_provider()
     account2 = provider.eth.accounts[2]
     account1 = provider.eth.accounts[1]
+    private_key_account1 = '0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1'
+    private_key_account2 = '0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c'
+
     print('-------' * 10)
     print('[ Summary ]: From Ganache Account To Random Account Transfer')
     print(' (+) Balance in Safe Proxy Account: ', provider.eth.getBalance(str(contract_artifacts['Proxy']['address'])))
@@ -119,15 +128,14 @@ def gnosis_test():
     print(' (+) Balance in Ganache Account: ', provider.eth.getBalance(str(account2)))
     print('Done.\n')
 
+    # Tx Data
     tx_data0 = dict(
         nonce=provider.eth.getTransactionCount(str(account2)),
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(random_account_address),
-        value=provider.toWei(1, 'ether')
+        value=provider.toWei(10, 'ether')
     )
-    private_key_account2 = '0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c'
-    private_key_account1 = '0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1'
     signed_txn = provider.eth.account.signTransaction(tx_data0, private_key_account2)
     tmp_txn_hash = provider.eth.sendRawTransaction(signed_txn.rawTransaction)
 
@@ -142,12 +150,13 @@ def gnosis_test():
     print(' + Balance in Ganache Account: ', provider.eth.getBalance(str(account2)))
     print('Done.\n')
 
+    # Tx Data
     tx_data1 = dict(
         nonce=provider.eth.getTransactionCount(str(random_account_address)),
         gasPrice=provider.eth.gasPrice,
         gas=100000,
         to=str(contract_artifacts['Proxy']['address']),
-        value=provider.toWei(0.9, 'ether')
+        value=provider.toWei(9, 'ether')
     )
 
     random_acc_signed_txn = provider.eth.account.signTransaction(tx_data1, random_private_key)
@@ -169,73 +178,67 @@ def gnosis_test():
     print('Done.\n')
 
     # note: Send Money to a Newly created account in the network, and lastly beetween safes?
-    nonce = functional_safe.functions.nonce().call()
-    _multi_sig_to = Account.create()
-    racc_multi_sig_address = _multi_sig_to.address
-    racc_multi_sig_private_key = _multi_sig_to.privateKey
+    multi_sig_to = Account.create()
+    multi_sig_address = multi_sig_to.address
+    multi_sig_private_key = multi_sig_to.privateKey
     print('[ Generate Account() ]')
-    print(' (+) 2ºRandom Address: ', racc_multi_sig_address)
-    print(' (+)) 2ºRandom Private Key: ', racc_multi_sig_private_key)
+    print(' (+) 2ºRandom Address: ', multi_sig_address)
+    print(' (+)) 2ºRandom Private Key: ', multi_sig_private_key)
     print('Done.\n')
 
     CREATE = 2
     DELEGATE_CALL = 1
     CALL = 0
 
-    # Sign should look like this piece of string
-    # let sig = "0x" + "0000000000000000000000000000000000000000000000000000000000000001" + "0000000000000000000000000000000000000000000000000000000000000000" + "01"
-    #
-    # address to,
-    # uint256 value,
-    # bytes calldata data,
-    # Enum.Operation
-    # operation uint256 safeTxGas,
-    # uint256 baseGas,
-    # uint256 gasPrice,
-    # address gasToken,
-    # address payable
-    # refundReceiver,
-    # bytes
-    # calldata
-    #signatures
+    # VARIABLES IN THE MULTISIGN EXAMPLE
+    address_to = multi_sig_address
+    value = provider.toWei(5, 'ether')
+    data = b''
+    operation = CALL
+    safe_tx_gas = 300
+    base_gas = 10
+    gas_price = 0
+    address_gas_token = NULL_ADDRESS
+    address_refund_receiver = NULL_ADDRESS
+    nonce = functional_safe.functions.nonce().call()
 
-    tx_hash_to_multi_sign = functional_safe.functions.getTransactionHash(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, nonce).call()
+    tx_hash_multi_sign = functional_safe.functions.getTransactionHash(
+        address_to, value, data, operation, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, nonce
+    ).call()
 
-    print('TxMultiSignHash: ' + str(tx_hash_to_multi_sign))
-    # transaction_hash = codecs.decode(tx_multi_sign_hash, 'hex_codec')
-    signers = [private_key_account1, private_key_account2]
-    multi_signature = multi_sign_tx(signers, tx_hash_to_multi_sign)
-    print('MultiSignature: ' + str(multi_signature))
+    # very_important_data = [Account.from_key(private_key_account1)]
+    very_important_data = [Account.from_key(private_key_account1), Account.from_key(private_key_account2)]
+    print('Input signers', very_important_data)
+    # generar Account y ordenar por address.
 
-    functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account1})
-    functional_safe.functions.approveHash(tx_hash_to_multi_sign).transact({'from': account2})
+    orderred_signers = sorted(very_important_data, key=lambda v: v.address.lower())
+    print('Ordered Signers', orderred_signers[0].privateKey, orderred_signers[0].address)
+    print('Ordered Signers', orderred_signers[1].privateKey, orderred_signers[1].address)
 
-    functional_safe.functions.execTransaction(racc_multi_sig_address, provider.toWei(0.8, 'ether'), b'', CALL, 10000, 100000, 1000, NULL_ADDRESS, NULL_ADDRESS, multi_signature).transact({'from': account1})
+    signature_bytes = b''
+    for signers in orderred_signers:
+        tx_signature = signers.signHash(tx_hash_multi_sign)
+        signature_bytes += tx_signature['signature']
+    print('[ Output Signature ]: ' + signature_bytes.hex())
 
-    # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
-    # bug: TypeError while passing the txHash for the operation to approve
+    functional_safe.functions.approveHash(tx_hash_multi_sign).transact({'from': account1})
+    functional_safe.functions.approveHash(tx_hash_multi_sign).transact({'from': account2})
 
-    # Sign Operation: Onwer1, Onwer2 with each private key respectively
+    # note: Make Tx from the Safe
+    functional_safe.functions.execTransaction(
+        address_to, value, data, CALL, safe_tx_gas, base_gas, gas_price, address_gas_token, address_refund_receiver, signature_bytes
+    ).transact({'from': account1})
+
+    print('-------' * 10)
+    print('[ Summary ]: From Random Account To Proxy Safe Account Transfer')
+    print(' + Balance in Safe Proxy Account: ', provider.eth.getBalance(str(contract_artifacts['Proxy']['address'])))
+    print(' + Balance in Random Account: ', provider.eth.getBalance(str(address_to)))
+    print('Done.\n')
 
     # Transaction Flow:
     # reference: https://gnosis-safe.readthedocs.io/en/version_0_0_2/services/relay.html
-
-    # print('Onwer 1 Sign', owner1_signed_message)
-    # print('Owner 2 Sign', owner2_signed_message)
-    # print('Done.\n')
+    # reference: https://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed/761#761
     # note: The proxy contract implements only two functions: The constructor setting the address of the master copy
-    # and the fallback function forwarding all transactions sent to the proxy via a DELEGATECALL to the master copy and
-    # returning all data returned by the DELEGATECALL.
-
-    # print(nonce_safe)
-    # txHash = new_proxy_trans.functions.getTransactionHash().call()
-    # aprove_tx = ''
-    # Based On the Threshold
-    # owner1_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-    # owner2_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-    # new_proxy_trans.functions.approveHash(txHash).transact()
-    # new_proxy_trans.functions.approveHash(txHash).transact()
-    # new_proxy_trans.functions.execTransaction()
 
     # print('Launching Gnosis Console')
     # gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
