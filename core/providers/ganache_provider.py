@@ -26,7 +26,9 @@ import logging
 # Todo: Fix Doc Information in all the reworked modules.
 # Todo: Create interface for the providers, or move all the functions to a single provider instance with autoconfiguration methods
 
-
+""" Ganache Provider
+This Class will represent the bridge between the current contract and the blockchain in ganache
+"""
 class GanacheProvider:
     def __init__(self, logging_lvl=INFO, gui=False):
         self.name = self.__class__.__name__
@@ -117,7 +119,8 @@ class GanacheProvider:
     # Todo: Map Events Properly, and remove them from the list of functions
     def map_contract_methods(self, contract_instance):
         """ Map Contract functions
-
+        This function will map Events, Functions ( call , transact ), make distintions beetwen them? no input automatic query like function
+        input but not output + doble Mayus name Event, otherwise functions with input,output transact it's required
         :param contract_instance:
         :return:
         """
@@ -135,6 +138,9 @@ class GanacheProvider:
                 except KeyError:
                     item_input = ''
 
+                # Todo: this function should be move out of the current provider
+                # Todo: change logic so it can be modified the part where it establish the call/transact
+                # Todo: check the retrieve function in the contract interface class
                 contract_methods[index] = {
                     'function_name': item_name,
                     'function_call_clean': 'contract_instance.functions.{0}({1}).call',

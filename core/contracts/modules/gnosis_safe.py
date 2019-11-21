@@ -31,13 +31,20 @@ class GnosisSafeModule:
     """ Gnosis Safe Module
     This module will provide the set of functions needed to interact with the Gnosis Safe through the commandline
     """
-    def __init__(self, _provider, _contract_artifacts, logger=''):
+    def __init__(self, provider, contract_artifacts, logger=''):
+        """
+        Function Init for the Gnosis Safe Module, that provides de core functions to interact with the contract through
+        the gnosis console.
+        :param provider:
+        :param contract_artifacts:
+        :param logger:
+        """
         self.name = self.__class__.__name__
-        self.provider = _provider
+        self.provider = provider
         self.build_contract_reader = BuildContractReader()
         self.logger = logger
-        self.provider = _provider
-        self.contract_artifacts = _contract_artifacts
+        self.provider = provider
+        self.contract_artifacts = contract_artifacts
 
     def __setup_accounts(self):
         return
@@ -46,7 +53,9 @@ class GnosisSafeModule:
     def setup(self, gnosissafe_instance, proxy_instance):
         """ Setup
         This function will finish the setup the Gnosis Safe Contract through the proxy contract
-            :return:
+            :param gnosissafe_instance: Main Gnosis Safe Instance to interact with
+            :param proxy_instance: Each proxy you're linking with the master copy of the Gnosis Safe Instance
+            :return: Proxy Instance
         """
         try:
             # Setup for GnosisSafe & Proxy Accounts
@@ -55,8 +64,8 @@ class GnosisSafeModule:
             account2 = self.provider.eth.accounts[2]
             list_of_accounts = [account0, account1, account2]
 
-            gnosissafe_instance.functions.setup(list_of_accounts, 2, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
-            proxy_instance.functions.setup(list_of_accounts, 2, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
+            gnosissafe_instance.functions.setup(list_of_accounts, 1, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
+            proxy_instance.functions.setup(list_of_accounts, 1, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
             return proxy_instance
         except Exception as err:
             print(err)
@@ -65,102 +74,37 @@ class GnosisSafeModule:
     def standard_safe_query(self):
         return
 
-    def standard_safe_transaction(self, _provider, _account_to, _account_from_private_key, _account_from, _ether_value=1):
+    def standard_safe_transaction(self, provider, account_to, account_from_private_key, account_from, ether_value=1):
         """ Standard Safe Transaction
-        This function will ...
+        This function will perform a standard transact operation
 
-            :param _provider:
-            :param _account_to:
-            :param _account_from_private_key:
-            :param _account_from:
-            :param _ether_value:
-            :return:
+            :param provider: current provider
+            :param account_to: account from which you are transacting with the current operation
+            :param account_from_private_key: key from which you are performing the current operation
+            :param account_from: account from which you are sending the transact operation
+            :param ether_value: toWei value to be transferred via transaction
+            :return: Receipt Tx ()
         """
         try:
-            signed_txn = _provider.eth.account.signTransaction(
+            signed_txn = provider.eth.account.signTransaction(
                 dict(
-                    nonce=_provider.eth.getTransactionCount(str(_account_from)),
-                    gasPrice=_provider.eth.gasPrice,
+                    nonce=provider.eth.getTransactionCount(str(account_from)),
+                    gasPrice=provider.eth.gasPrice,
                     gas=100000,
-                    to=str(_account_to),
-                    value=_provider.toWei(_ether_value, 'ether')
-                    ), _account_from_private_key
+                    to=str(account_to),
+                    value=provider.toWei(ether_value, 'ether')
+                    ), account_from_private_key
             )
-            signed_txn_hash = _provider.eth.sendRawTransaction(signed_txn.rawTransaction)
+            signed_txn_hash = provider.eth.sendRawTransaction(signed_txn.rawTransaction)
             return signed_txn_hash
         except Exception as err:
             print(err)
         return 'signed_txn_hash'
 
-    def safe_transaction(self):
+    def safe_transaction_compose(self):
         return
 
-    def safe_query(self):
+    def safe_query_compose(self):
         return
 
-    # todo:
-    # def multi_sign_transaction(self):
-        # pasarle el proxy
-        # pasarle la cuenta random con saldo
-        # getHash de la operacion que queremos
 
-
-    # new_account_address = account.address
-    # new_account_private_key = account.privateKey
-    # note: block of multisign
-    #  txHash = await gnosisSafe.getTransactionHash(to, value, data, operation, 0, 0, 0, 0, 0, nonce)
-    # nonce_safe = new_proxy_trans.nonce()
-    # print(nonce_safe)
-    # txHash = new_proxy_trans.functions.getTransactionHash().call()
-    # aprove_tx = ''
-    # Based On the Threshold
-    # owner1_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-    # owner2_sign = account.signHash(message_hash=txHash, private_key=account.privateKey)
-    # new_proxy_trans.functions.approveHash(txHash).transact()
-    # new_proxy_trans.functions.approveHash(txHash).transact()
-    # new_proxy_trans.functions.execTransaction()
-
-    # deterministic_accounts = self.get_account_information()
-    # accountTarget = str(tx_receipt.contractAddress)
-    # accountList = [
-    #     deterministic_accounts['account_1']['address'],
-    #     deterministic_accounts['account_2']['address']]
-    # privatekeys = [
-    #     deterministic_accounts['account_1']['private_key'],
-    #     deterministic_accounts['account_2']['private_key']
-    # ]
-    #
-    # for i in range(0, len(accountList)):
-    #     transaction = {
-    #         'to': accountTarget,
-    #         'value': current_provider.toWei(1, 'ether'),
-    #         'gas': 200000,
-    #         'gasPrice': current_provider.eth.gasPrice,
-    #         'nonce': current_provider.eth.getTransactionCount(current_provider.toChecksumAddress(accountList[i])),
-    #         'chainId': 1
-    #     }
-    #
-    #     signed = current_provider.eth.account.signTransaction(transaction, privatekeys[i])
-    #     current_provider.eth.sendRawTransaction(signed.rawTransaction)
-
-    # note: Tx Transfer from Safe:
-    #  CALL=0 Withdraw
-    #  nonce = await gnosisSafe.nonce()
-    #  txHash = await gnosisSafe.getTransactionHash(to, value, data, operation, 0, 0, 0, 0, 0, nonce)
-    #  executeDataWithoutSignatures = gnosisSafe.contract.execTransaction.getData(to, value, data, operation, 0, 0, 0, 0, 0, "0x")
-    #  approveData = gnosisSafe.contract.approveHash.getData(txHash)
-    #  for i in accounts:
-    #       sigs += "000000000000000000000000" + i.replace('0x', '') + "0000000000000000000000000000000000000000000000000000000000000000" + "01"
-    #  executeDataUsedSignatures = gnosisSafe.contract.execTransaction.getData(to, value, data, operation, 0, 0, 0, 0, 0, sigs)
-    #  tx = gnosisSafe.execTransaction(to, value, data, operation, 0, 0, 0, 0, 0, sigs, {from: txSender})
-    #  _
-    #  executeTransaction('executeTransaction withdraw 0.5 ETH', [accounts[0], accounts[2]], accounts[0], web3.toWei(0.5, 'ether'), "0x", CALL)
-    #  _
-    #  ethSign = async function(account, hash) {
-    #     return new Promise(function(resolve, reject) {
-    #     web3.currentProvider.sendAsync({
-    #         jsonrpc: "2.0",
-    #         method: "eth_sign",
-    #         params: [account, hash],
-    #         id: new Date().getTime()
-    #     }, function(err, response)
