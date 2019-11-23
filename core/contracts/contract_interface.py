@@ -115,7 +115,7 @@ class ContractInterface:
         print('Done.', '\n')
         return {'abi': contract_abi, 'bytecode': contract_bytecode, 'address':  tx_receipt.contractAddress}
 
-    def deploy_contract(self):
+    def deploy_contract(self, migrate=False):
         """Deploys contract specified by 'contract_to_deploy'
 
         This function will deploy the contract provided in the initialization of the class
@@ -124,6 +124,7 @@ class ContractInterface:
         """
         # Todo: set a compiling truffle exception, same for deployment + fatal
         contract_artifacts = {}
+        # Map de Assets Directory
         if self.compiled_contract_list is []:
             print('Source files not compiled, compiling now and trying again...')
             try:
@@ -131,7 +132,6 @@ class ContractInterface:
                 print('Done.')
             except Exception as err:
                 print(err)
-
         try:
             # try-catch for Exceptions on truffle commands while using subprocess
             print('Start Truffle Migration')
@@ -167,7 +167,7 @@ class ContractInterface:
             return {}
 
 
-    def connect_to_instance(self, contract_artifacts, contract_address):
+    def get_to_instance(self, contract_artifacts, contract_address):
         ''' Connect To Instance
         Fucntion connect to a  smart contract, you only need address?
         :param contract_artifacts:
@@ -176,7 +176,7 @@ class ContractInterface:
         '''
         return
 
-    def get_instance(self, contract_artifacts):
+    def get_new_instance(self, contract_artifacts):
         """Returns a contract instance object from variables in 'deployment_vars'
 
         Checks there is in fact an address saved. Also does a (crude) check

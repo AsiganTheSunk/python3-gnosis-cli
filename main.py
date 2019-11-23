@@ -41,6 +41,8 @@ gnosis_safe_cli_completer = [
     'default', 'delete', 'exit', 'quit', 'without',
 ]
 
+
+
 # Todo: Finish the multi sign Transaction for the proxy contract.
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
@@ -50,13 +52,13 @@ from web3 import Web3
 
 
 def call_gnosis_console():
-    # print('Launching Gnosis Console')
-    # gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
-    # for item in gnosis_safe_methods:
-    #     gnosis_safe_cli_completer.append(gnosis_safe_methods[item]['function_name'])
-    #     # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
-    # gnosis_cli = GnosisConsoleInput()
-    # gnosis_cli.run(gnosis_safe_methods, proxy_instance, WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
+    print('Launching Gnosis Console')
+    #gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
+    #for item in gnosis_safe_methods:
+        #gnosis_safe_cli_completer.append(gnosis_safe_methods[item]['function_name'])
+        # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
+    gnosis_cli = GnosisConsoleInput()
+    gnosis_cli.run_console_session(WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
     return
 
 
@@ -110,8 +112,8 @@ def gnosis_test():
     contract_artifacts = contract_interface.deploy_contract()
 
     # remark: Get Contract Artifacts for the Proxy & GnosisSafe
-    safe_instance = contract_interface.get_instance(contract_artifacts['GnosisSafe'])
-    proxy_instance = contract_interface.get_instance(contract_artifacts['Proxy'])
+    safe_instance = contract_interface.get_new_instance(contract_artifacts['GnosisSafe'])
+    proxy_instance = contract_interface.get_new_instance(contract_artifacts['Proxy'])
 
     # remark: Get Interface to interact with the contract
     gnosis_safe_module = GnosisSafeModule(provider, contract_artifacts)
@@ -184,8 +186,9 @@ def gnosis_test():
     # print('failure:\n', eventlist_failure)
     # print('success:\n', eventlist_success)
 def main():
-    gnosis_test()
-    #retrieve_default_accounts()
+    call_gnosis_console()
+    # gnosis_test()
+    # retrieve_default_accounts()
 
 if __name__ == '__main__':
     main()
