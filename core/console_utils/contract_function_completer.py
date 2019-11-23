@@ -7,6 +7,12 @@ from core.console_utils.contract_console_constants import *
 
 class ContractFunctionCompleter(Completer):
     def get_completions(self, document, complete_event):
+        """ Get Completions
+        This will function will provide the completions for param types and function name
+        :param document:
+        :param complete_event:
+        :return:
+        """
         # for each word the completer gets
         previous_word = document.find_previous_word_ending()
         word = document.get_word_before_cursor()

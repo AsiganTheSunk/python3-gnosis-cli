@@ -53,24 +53,43 @@ class GnosisConsoleInput:
 
     @staticmethod
     def __get_prompt_text(contract_name=''):
+        """ Get Prompt Text
+
+        :param contract_name:
+        :return:
+        """
         return f'(gnosis-safe-cli){contract_name}>: '
 
-    def __close_session(self, previous_session=None):
+    @staticmethod
+    def __close_session(previous_session=None):
+        """ Close Session
+
+        :param previous_session:
+        :return:
+        """
         if previous_session is None:
             raise EOFError
         return previous_session
 
     def run_console_session(self, prompt_text='', session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
+        """ Run Console Session
+
+        :param prompt_text:
+        :param session_completer:
+        :param previous_session:
+        :param lexer:
+        :return:
+        """
         if previous_session is None:
             session = PromptSession(self.__get_prompt_text(), completer=cli_sesion_completer, lexer=ContractLexer(), style=style)
         else:
-            session = PromptSession(prompt_text, completer=session_completer, style=style, lexer=lexer)
+            session = PromptSession(prompt_text, completer=ContractFunctionCompleter(), style=style, lexer=lexer)
         try:
             while True:
                 try:
                     input_value = session.prompt()
                     if input_value == 'load':
-                        self.run_console_session(prompt_text=self.__get_prompt_text('[ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=ContractFunctionCompleter(), lexer=lexer)
+                        self.run_console_session(prompt_text=self.__get_prompt_text('[ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
                     elif (input_value == 'close') or (input_value == 'quit') or (input_value == 'exit'):
                         return self.__close_session(previous_session)
                     elif input_value == 'about':
@@ -88,30 +107,4 @@ class GnosisConsoleInput:
             print('FATAL ERROR: ' + str(err))
 
 
-# text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=True)
-# text = session.prompt('(gnosis-safe-cli)> ', validator=validator, validate_while_typing=False)
-# try:
-#     for item in contract_methods:
-#         if contract_methods[item]['function_name'] in text:
-#             current_function_call = contract_methods[item]['function_call']
-#             print('Contract Call to: %s' % current_function_call)
-#             # remark: ReadFunctionMap
-#             # Todo: remove this piece of not so very good just so really bad code, this is only to showcase early functionallity
-#             splitted_input = len(text.split(' '))
-#             if splitted_input == 1:
-#                 print(eval(current_function_call)())
-#             else:
-#                 for data in contract_methods[item]['function_input']:
-#                     try:
-#                         function_schema = contract_methods[item]['function_call_clean']
-#                         # Todo: base de eval process in a list of input validations, based on the function_input stored in the current_dict for contract interface
-#
-#                         params = '\'' + eval_function_old(text) + '\''
-#                         current_function = function_schema.format(contract_methods[item]['function_name'], params)
-#                         print(function_schema.format(contract_methods[item]['function_name'], params))
-#                         print(eval(current_function)())
-#                     except Exception as err:
-#                         print(err)
-# except Exception as err:  # KeyError
-#     print(err)
-#     continue
+

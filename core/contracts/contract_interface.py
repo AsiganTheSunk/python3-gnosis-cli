@@ -167,7 +167,7 @@ class ContractInterface:
             return {}
 
 
-    def get_to_instance(self, contract_artifacts, contract_address):
+    def get_instance(self, contract_artifacts, contract_address):
         ''' Connect To Instance
         Fucntion connect to a  smart contract, you only need address?
         :param contract_artifacts:

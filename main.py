@@ -41,15 +41,12 @@ gnosis_safe_cli_completer = [
     'default', 'delete', 'exit', 'quit', 'without',
 ]
 
-
-
 # Todo: Finish the multi sign Transaction for the proxy contract.
 # note: The contracts will be compiled via subprocess using truffle compile this is maily because the current versions
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
 
 # Import Web3
 from web3 import Web3
-
 
 def call_gnosis_console():
     print('Launching Gnosis Console')
@@ -61,7 +58,7 @@ def call_gnosis_console():
     gnosis_cli.run_console_session(WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
     return
 
-
+# Todo: to be moved to AccountManager?
 def retrieve_default_accounts():
     """ Retrieve Default Ganache Accounts,
     This function will recover and return the default accounts created with the -d deterministic param, in a sorted list
