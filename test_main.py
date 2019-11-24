@@ -97,14 +97,30 @@ def map_contract_methods(contract_instance):
 
 
 def __quote_argument(value):
+    """ Quote Argument
+
+    :param value:
+    :return:
+    """
     return QUOTE + value + QUOTE
 
 
-def __get_value_argument(value):
+def __get_method_argument_value(value):
+    """ Get Method Argument Value
+
+    :param value:
+    :return:
+    """
     return __quote_argument(value.split('=')[1])
 
 
-def __eval_arguments(argument_list, function_arguments):
+def __get_input_method_arguments(argument_list, function_arguments):
+    """ Get Input Method Arguments
+
+    :param argument_list:
+    :param function_arguments:
+    :return:
+    """
     arguments_to_fill = ''
     execute_value = False
     to_queue = False
@@ -116,7 +132,7 @@ def __eval_arguments(argument_list, function_arguments):
 
     for index, argument_item in enumerate(argument_list):
         if '--from=' in argument_item:
-            address_from = __get_value_argument(argument_item)
+            address_from = __get_method_argument_value(argument_item)
             aux_address_from = True
         elif '--execute' == argument_item:
             if to_queue or to_query:
@@ -136,27 +152,35 @@ def __eval_arguments(argument_list, function_arguments):
         else:
             for index, argument_type in enumerate(function_arguments):
                 if argument_type[index] in argument_item and argument_positions_to_fill != 0 and argument_positions_to_fill > argument_positions_filled:
-                    arguments_to_fill += __get_value_argument(argument_item) + COMA
+                    arguments_to_fill += __get_method_argument_value(argument_item) + COMA
                     argument_positions_filled += 1
 
             arguments_to_fill = arguments_to_fill[:-1]
 
     return argument_list[0], arguments_to_fill, address_from, execute_value, to_queue, to_query
 
-
+# todo: move to the proper class all methods
 QUOTE = '\''
 COMA = ','
 PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 
 
+# todo:
 def operate_with_contract(stream, contract_methods, contract_instance):
+    """ Operate With Contract
+    This function will retrieve the methods present & in the contract_instance
+    :param stream:
+    :param contract_methods:
+    :param contract_instance:
+    :return:
+    """
     try:
         print(stream)
         for item in contract_methods:
             if contract_methods[item]['name'] in stream:
                 splitted_stream = stream.split(' ')
-                function_name, function_arguments, address_from, execute_flag, queue_flag, query_flag = __eval_arguments(splitted_stream, contract_methods[item]['arguments'])
-                print(__eval_arguments(splitted_stream, contract_methods[item]['arguments']))
+                function_name, function_arguments, address_from, execute_flag, queue_flag, query_flag = __get_input_method_arguments(splitted_stream, contract_methods[item]['arguments'])
+                print(__get_input_method_arguments(splitted_stream, contract_methods[item]['arguments']))
 
                 if execute_flag or query_flag or queue_flag:
                     if execute_flag:
@@ -176,6 +200,8 @@ def operate_with_contract(stream, contract_methods, contract_instance):
         print(err)
 
 def main():
+
+
     # remark: Set Ganache Provider
     ganache_provider = GanacheProvider()
     provider = ganache_provider.get_provider()
@@ -219,7 +245,7 @@ def main():
     query_is_owner = 'isOwner --address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1 --query'
     execute_swap_owner = 'swapOwner --address=0x00000000000000000000000000000000 --address=0x00000000000000000000000000000001 --address=0x00000000000000000000000000000002 --from=0x00000000000000000000000000000003 --execute'
     query_get_owners = 'getOwners --query'
-    query_execTransaction = 'execTransaction --queue --address=0x00000000000000000000000000000000 --address=0x00000000000000000000000000000001 --address=0x00000000000000000000000000000002'
+    query_execTransaction_not_enough_args = 'execTransaction --queue --address=0x00000000000000000000000000000000 --address=0x00000000000000000000000000000001 --address=0x00000000000000000000000000000002'
 
     # remark: Operate with the current Contract
     operate_with_contract(query_get_owners, contract_methods, contract_instance)

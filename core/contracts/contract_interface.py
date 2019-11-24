@@ -200,16 +200,3 @@ class ContractInterface:
         else:
             print(f'Contract deployed at {contract_address}. This function returns an instance object.')
         return self.provider.eth.contract(abi=contract_abi, address=contract_address)
-
-    # def retrieve(self, function_, *call_args, tx_params=None):
-    #     """Contract.function.call() with cleaning"""
-    #
-    #     fxn_to_call = getattr(self.contract_instance.functions, function_)
-    #     built_fxn = fxn_to_call(*call_args)
-    #
-    #     return_values = built_fxn.call(transaction=tx_params)
-    #
-    #     if type(return_values) == bytes:
-    #         return_values = return_values.decode('utf-8').rstrip("\x00")
-    #
-    #     return return_values

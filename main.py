@@ -48,15 +48,10 @@ gnosis_safe_cli_completer = [
 # Import Web3
 from web3 import Web3
 
-def call_gnosis_console():
+def call_gnosis_console(contract_instance):
     print('Launching Gnosis Console')
-    #gnosis_safe_methods = ganache_provider.map_contract_methods(proxy_instance)
-    #for item in gnosis_safe_methods:
-        #gnosis_safe_cli_completer.append(gnosis_safe_methods[item]['function_name'])
-        # print(gnosis_safe_methods[item]['function_input'], '->', gnosis_safe_methods[item]['function_input'])
-    gnosis_cli = GnosisConsoleInput()
+    gnosis_cli = GnosisConsoleInput(contract_instance)
     gnosis_cli.run_console_session(WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
-    return
 
 # Todo: to be moved to AccountManager?
 def retrieve_default_accounts():
@@ -128,7 +123,6 @@ def gnosis_test():
     print(orderred_signers[1].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[1].address).call())
     print(orderred_signers[2].address, 'is Owner?', functional_safe.functions.isOwner(orderred_signers[2].address).call())
 
-
     # remark: Data to ve used in the Transaction
     new_account_to_add = Account.create()
     new_account_address = new_account_to_add.address
@@ -182,11 +176,64 @@ def gnosis_test():
     # print('++++++++++++++'*10)
     # print('failure:\n', eventlist_failure)
     # print('success:\n', eventlist_success)
+    call_gnosis_console(functional_safe)
+
+
 def main():
-    call_gnosis_console()
-    # gnosis_test()
-    # retrieve_default_accounts()
+    gnosis_test()
+
 
 if __name__ == '__main__':
     main()
 
+# note:
+# python gnosis_cli.py --network=ganache --pkey --silence --debug
+# (gnosis-safe-cli)>:
+# (gnosis-safe-cli)>: viewNetwork
+# (gnosis-safe-cli)>: setNework --name=ganache
+# (gnosis-safe-cli)>: setNework --id=0
+# (gnosis-safe-cli)>:
+# (gnosis-safe-cli)>: viewAccount
+# (gnosis-safe-cli)>: newAccount --address= --pkey=|--mnemonic=
+# (gnosis-safe-cli)>:
+# (gnosis-safe-cli)>: loadContract --address=0x(0)*40 --abi=/path/to/abi/
+# (gnosis-safe-cli)>: loadContract --build=/path/to/build/
+# (gnosis-safe-cli)>:
+# (gnosis-safe-cli)>: viewSession
+# (gnosis-safe-cli)>: loadSession --alias=Gnosis_Safe_v1.1.0
+# (gnosis-safe-cli)>: loadSession --index=1
+# (gnosis-safe-cli)>: setDefaultSession --alias=Gnosis_Safe_v1.1.0
+# (gnosis-safe-cli)>: setDefaultSession --index=1
+
+# (gnosis-safe-cli)
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: getOwners --query
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: getThreshold --query
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: changeThreshold --uint=8 --address=0x(0*40) --address=0x(0*40) --execute|--queue
+
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: view gas
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: setGasLimit 0
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: setSafeGas 0
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: setGas 0
+
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: view txReceipts
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: view txHistory
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: view batch
+
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: view owners
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: setDefaultOwner 0x(0*40)
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: setDefaultOwnerList 0x(0*40) 0x(0*40) 0x(0*40)
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: runSetup
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: newSetup
+# [ ./newSetup ][ Gnosis-Safe(v1.1.0) ]>:
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: newPayload
+# [ ./newPayload ][ Gnosis-Safe(v1.1.0) ]>: --address=
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: newCustom
+# [ ./newCustom ][ Gnosis-Safe(v1.1.0) ]>: payload --address=
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>: close/exit/quit
+# [ ./ ][ Gnosis-Safe(v1.1.0) ]>:
