@@ -75,25 +75,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from prompt_toolkit.shortcuts import prompt
-from core.utils.contract.contract_lexer import ContractLexer
-from core.utils.contract.contract_function_completer import ContractFunctionCompleter
-
-
 def main():
-    # Simple completion menu.
-    print('(The completion menu displays colors.)')
-    while True:
-        try:
-            user_input = prompt('[ Type Function ]: ', completer=ContractFunctionCompleter(), lexer=ContractLexer())
-            print(user_input)
-            if user_input == 'exit':
-                raise EOFError
-        except KeyboardInterrupt:
-            continue  # Control-C pressed. Try again.
-        except EOFError:
-            break  # Control-D pressed.
-
+    return
 
 if __name__ == '__main__':
     main()

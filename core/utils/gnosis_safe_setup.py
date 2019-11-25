@@ -13,18 +13,6 @@ from core.constants.contract_contants import NULL_ADDRESS
 # Import Contract Reader
 from core.utils.build_contract_reader import BuildContractReader
 
-# note: Contract Operations
-#  + When ever we need to operate with the current contract, doing a operation
-#  that modifies the contract, 'transact()' must be used
-#  + When ever we need to operate with the current contract, doing a operation
-#  that queries the contract, 'call()' must be used
-
-# note: Setup Method 1:
-#  - Deployment of GnosisSafe
-#    + init via gnosis_safe_contract.setup().transact()
-#  - Deployment of Proxy
-#   + init via proxy_contract.contructor().transact()
-
 class GnosisSafeModule:
     """ Gnosis Safe Module
     This module will provide the set of functions needed to interact with the Gnosis Safe through the commandline
@@ -41,12 +29,7 @@ class GnosisSafeModule:
         self.provider = provider
         self.build_contract_reader = BuildContractReader()
         self.logger = logger
-        self.provider = provider
         self.contract_artifacts = contract_artifacts
-
-    def __setup_accounts(self):
-        return
-
 
     def setup(self, gnosissafe_instance, proxy_instance):
         """ Setup
@@ -62,14 +45,13 @@ class GnosisSafeModule:
             account2 = self.provider.eth.accounts[2]
             list_of_accounts = [account0, account1, account2]
 
+            print('--init safe gnosis setup')
             gnosissafe_instance.functions.setup(list_of_accounts, 1, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
+            print('--init proxy factory setup')
             proxy_instance.functions.setup(list_of_accounts, 1, NULL_ADDRESS, b'', NULL_ADDRESS, NULL_ADDRESS, 0, NULL_ADDRESS).transact({'from': account0})
             return proxy_instance
         except Exception as err:
-            print(err)
-        return
-
-    def standard_safe_query(self):
+            print(type(err), err)
         return
 
     def standard_safe_transaction(self, provider, account_to, account_from_private_key, account_from, ether_value=1):
@@ -98,11 +80,3 @@ class GnosisSafeModule:
         except Exception as err:
             print(err)
         return 'signed_txn_hash'
-
-    def safe_transaction_compose(self):
-        return
-
-    def safe_query_compose(self):
-        return
-
-

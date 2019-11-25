@@ -11,7 +11,7 @@ from core.utils.gnosis_safe_setup import GnosisSafeModule
 from core.providers.ganache_provider import GanacheProvider
 
 # Import Contract Interface
-from core.utils.contract.contract_interface import ContractInterface
+from core.utils.contract.contract_truffle import ContractInterface
 
 # Import Prompt Toolkit Packages
 from core.gnosis_console_input import GnosisConsole
