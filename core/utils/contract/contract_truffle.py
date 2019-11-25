@@ -167,15 +167,6 @@ class ContractInterface:
             return {}
 
 
-    def get_instance(self, contract_artifacts, contract_address):
-        ''' Connect To Instance
-        Fucntion connect to a  smart contract, you only need address?
-        :param contract_artifacts:
-        :param contract_address:
-        :return:
-        '''
-        return
-
     def get_new_instance(self, contract_artifacts):
         """Returns a contract instance object from variables in 'deployment_vars'
 
@@ -187,8 +178,6 @@ class ContractInterface:
         Returns:
             self.contract_instance(class ContractInterface): see above
         """
-
-        # review: Web3.toChecksumAddress(contract_address)
         contract_abi = contract_artifacts['abi']
         contract_address = contract_artifacts['address']
         try:

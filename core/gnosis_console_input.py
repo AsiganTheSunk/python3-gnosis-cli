@@ -27,7 +27,8 @@ gnosis_safe_completer = WordCompleter([
     'delete', 'exit', 'quit', 'without'], ignore_case=True)
 
 cli_sesion_completer = WordCompleter([
-    'load', 'about', 'info', 'help', 'loadOwner'], ignore_case=True)
+    'load', 'about', 'info', 'help', 'newContract', 'loadContract'
+], ignore_case=True)
 
 
 style = Style.from_dict({
@@ -74,16 +75,20 @@ class ChildGnosisConsole:
         return previous_session
 
 
+from core.utils.gnosis_console_session_accounts import ConsoleSessionAccounts
+
 class GnosisConsole:
-    def __init__(self, contract_instance):
+    def __init__(self, contract_artifacts):
         self.name = self.__class__.__name__
         self.console_session = PromptSession()
         self.contract_console_session = []
-
+        self.console_accounts = ConsoleSessionAccounts()
+        self.contract_artifacts = contract_artifacts
         # Get the Contract Info
         # Todo: this should be moved to SubGnosisConsole
-        self.contract_methods = self.map_contract_methods(contract_instance)
-        self.contract_instante = contract_instance
+        #print('--loading artifacts', self.contract_artifacts['instance'])
+        self.contract_methods = self.map_contract_methods(self.contract_artifacts['instance'])
+        self.contract_instante = self.contract_artifacts['instance']
 
     @staticmethod
     def _get_prompt_text(contract_name=''):
@@ -107,9 +112,13 @@ class GnosisConsole:
 
     def _evaluate_gnosis_console_commands(self, stream, session, session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
         print('gnosis_console_stream_input:', stream)
-        if stream == 'load':
+        # loadContract --alias=GnosisSafe-v1.1.0 // loadContract 0
+
+        if stream.startswith('loadContract'):
+            load_data = stream.slipt(' ')
+
             self.run_console_session(prompt_text=self._get_prompt_text('\n[ ./ ][ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
-        elif stream == 'about':
+        elif stream.startswith('about'):
             print('here_about')
         elif (stream == 'info') or (stream == 'help'):
             print('info/help')

@@ -3,12 +3,11 @@
 
 # Importing Custom Logger & Logging Modules
 from core.logger.custom_logger import CustomLogger
-from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
-from logging import INFO, DEBUG, WARNING
+from logging import INFO
 import logging
 
 # Import Socket Exceptions
-from core.net.exceptions.network_exceptions import NetworkAgentFatalException
+from core.utils.net.exceptions import NetworkAgentFatalException
 
 # Import Socket Module
 import socket

@@ -8,7 +8,7 @@ from core.constants.contract_contants import NULL_ADDRESS
 from core.utils.gnosis_safe_setup import GnosisSafeModule
 
 # Import Provider Packages
-from core.providers.ganache_provider import GanacheProvider
+from core.utils.ganache_provider import GanacheProvider
 
 # Import Contract Interface
 from core.utils.contract.contract_truffle import ContractInterface
