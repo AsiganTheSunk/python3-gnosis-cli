@@ -7,7 +7,7 @@ from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.styles.named_colors import NAMED_COLORS
 
 # Import Regex Expresions from Contract Console Constants Package
-from core.console_utils.contract_console_constants import (
+from core.utils.contract.contract_console_constants import (
     _exit, simple_function_name, normal_address, uint_data, execute, queue, bytecode_data
 )
 

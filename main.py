@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from core.providers.ganache_provider import NULL_ADDRESS
+
+from core.constants.contract_contants import NULL_ADDRESS
 
 # Import GnosisSafe Module
-from core.contracts.modules.gnosis_safe import GnosisSafeModule
+from core.utils.gnosis_safe_setup import GnosisSafeModule
 
 # Import Provider Packages
-from core.providers.infura_provider import InfuraProvider
 from core.providers.ganache_provider import GanacheProvider
 
 # Import Contract Interface
-from core.contracts.contract_interface import ContractInterface
+from core.utils.contract.contract_interface import ContractInterface
 
 # Import Prompt Toolkit Packages
-from core.gnosis_console_input import GnosisConsoleInput
+from core.gnosis_console_input import GnosisConsole
 from prompt_toolkit.completion import WordCompleter
 import os
 
@@ -22,14 +22,12 @@ import os
 from eth_account import Account
 
 # Import Transaction History Manager Package
-from core.transaction_history_manager import TransactionHistoryManager
 
 # Import Gnosis CLI
-import gnosis_cli as cli
 
 # Todo: This should be moved to the ganache_provider.
 # Import default deterministic account information for Ganache Provider
-from core.providers.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
+from core.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
 
 PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 CONTRACT_SOL_DIRECTORY = PROJECT_DIRECTORY + 'contracts/'
@@ -46,11 +44,10 @@ gnosis_safe_cli_completer = [
 #  for py-solcx and py-sol reports an error while trying to access the mock contracts in GnosisSafe Project.
 
 # Import Web3
-from web3 import Web3
 
 def call_gnosis_console(contract_instance):
     print('Launching Gnosis Console')
-    gnosis_cli = GnosisConsoleInput(contract_instance)
+    gnosis_cli = GnosisConsole(contract_instance)
     gnosis_cli.run_console_session(WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
 
 # Todo: to be moved to AccountManager?

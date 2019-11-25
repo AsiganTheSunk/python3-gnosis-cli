@@ -8,10 +8,10 @@ import os
 from subprocess import Popen, PIPE
 
 # Import Truffle Command Constant
-from core.contracts.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HARD_MIGRATE, TRUFFLE_SOFT_MIGRATE
+from core.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HARD_MIGRATE
 
 # Import Json ABIReader Package
-from core.providers.utils.build_contract_reader import BuildContractReader
+from core.utils.build_contract_reader import BuildContractReader
 
 class ContractInterface:
     """A convenience interface for interacting with ethereum smart contracts

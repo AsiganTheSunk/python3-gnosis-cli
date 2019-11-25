@@ -6,14 +6,12 @@
 # reference: (Safe Project) https://github.com/gnosis/safe-contracts
 
 # Import Web3 Module
-from web3 import Web3
-from eth_account import Account
 
 # Import Constant
-from core.providers.constants.contract_contants import NULL_ADDRESS
+from core.constants.contract_contants import NULL_ADDRESS
 
 # Import Contract Reader
-from core.providers.utils.build_contract_reader import BuildContractReader
+from core.utils.build_contract_reader import BuildContractReader
 
 # note: Contract Operations
 #  + When ever we need to operate with the current contract, doing a operation

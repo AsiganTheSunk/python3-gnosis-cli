@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from prompt_toolkit.completion import Completer, Completion
-from core.console_utils.contract_console_constants import *
+from core.utils.contract.contract_console_constants import *
 
 
 class ContractFunctionCompleter(Completer):

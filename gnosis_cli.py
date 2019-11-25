@@ -2,13 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Import Gnosis Console Input Validation
-from core.gnosis_console_input_validation import GnosisConsoleInputValidation
-from core.gnosis_console_input import GnosisConsoleInput
 
 # Import Click Package
-import click
-
-import main as m
 
 
 # @click.command()
@@ -81,8 +76,8 @@ import main as m
 # -*- coding: utf-8 -*-
 
 from prompt_toolkit.shortcuts import prompt
-from core.console_utils.contract_lexer import ContractLexer
-from core.console_utils.contract_function_completer import ContractFunctionCompleter
+from core.utils.contract.contract_lexer import ContractLexer
+from core.utils.contract.contract_function_completer import ContractFunctionCompleter
 
 
 def main():

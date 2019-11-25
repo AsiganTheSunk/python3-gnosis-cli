@@ -4,9 +4,7 @@
 # Import Os Package
 import os
 
-from eth_account import Account
-from core.providers.constants.contract_contants import NULL_ADDRESS
-from core.providers.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
+from core.constants.ganache_constants import DETERMINISTIC_ACCOUNT_INFORMATION
 
 project_directory = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 
@@ -18,8 +16,7 @@ from web3 import Web3
 
 # Importing Custom Logger & Logging Modules
 from core.logger.custom_logger import CustomLogger
-from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
-from logging import INFO, DEBUG, WARNING
+from logging import INFO
 import logging
 
 # Todo: Remove logger, pass the logger from "gnosis_cli" upper classes, not enough out to justify owning a logger.

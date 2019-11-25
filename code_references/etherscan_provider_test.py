@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from core.providers.constants.api_keys import api_key_dict
-from core.providers.data_struct.blk_instance import BlkInstance
+from core.constants.api_keys import api_key_dict
+from core.data_struct.blk_instance import BlkInstance
 import etherscan
 
 class EtherscanModule:
@@ -21,7 +21,6 @@ def main():
 
     address2_safe = '0x522715235d66faeF072509697445A66B442faD88'
 
-    import re
     # re.search('[aA-zZ,0-9]')
     # re.search('[A-Z,0-9]')
     ETHERSCAN_API_KEY = api_key_dict['API_KEY']['etherscan']['0']

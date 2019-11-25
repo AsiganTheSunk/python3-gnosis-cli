@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 
 # Import API Key
-from core.providers.constants.api_keys import api_key_dict
-from core.providers.constants.test_contract import test_abi_contract
+from core.constants.api_keys import api_key_dict
 
 # Import Web3 Module
-from web3 import Web3, HTTPProvider
 
 # Importing Custom Logger & Logging Modules
 from core.logger.custom_logger import CustomLogger
-from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
-from logging import INFO, DEBUG, WARNING
+from logging import INFO
 import logging
 
 class InfuraProvider:

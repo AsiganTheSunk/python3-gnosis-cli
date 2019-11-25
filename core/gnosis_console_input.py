@@ -2,19 +2,17 @@
 # -*- coding: utf-8 -*-
 
 # Import Pygments Package
-from core.console_utils.contract_lexer import ContractLexer
-from core.console_utils.contract_function_completer import ContractFunctionCompleter
+from core.utils.contract.contract_lexer import ContractLexer
+from core.utils.contract.contract_function_completer import ContractFunctionCompleter
 
 # Import PromptToolkit Package
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
-import re
+
 # Import Provider Packages
 
 # Import Sys Package
-import sys
-from prompt_toolkit.validation import Validator
 # Importing Custom Logger & Logging Modules
 # from core.logger.custom_logger import CustomLogger
 # from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
@@ -22,7 +20,6 @@ from prompt_toolkit.validation import Validator
 # import logging
 
 # Import Console Flags
-from core.constants.default_values import ConsoleSessionTypeFlag as console_flags
 
 gnosis_safe_completer = WordCompleter([
     'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
@@ -47,17 +44,49 @@ QUOTE = '\''
 COMA = ','
 PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 
+# def to_32byte_hex(val):
+#     return Web3.toHex(Web3.toBytes(val).rjust(32, b'\0'))
 
-class GnosisConsoleInput:
+
+class ChildGnosisConsole:
+    def __init__(self, affix_stream, contract_instance, lexer, completer, previous_session):
+        self.affix_stream = affix_stream
+        self.contract_instance = contract_instance
+        self.lexer = lexer
+        self.completer = completer
+        self.previous_session = previous_session
+
+    def _get_prompt_text(self, stream=''):
+        """ Get Prompt Text
+
+        :param contract_name:
+        :return:
+        """
+        return f'(gnosis-cli)\n\t[ ./{self.affix_stream} ][ {stream} ]>: '
+
+    @staticmethod
+    def _close_session(previous_session=None):
+        """ Close Session
+
+        :param previous_session:
+        :return:
+        """
+        return previous_session
+
+
+class GnosisConsole:
     def __init__(self, contract_instance):
         self.name = self.__class__.__name__
-        self.main_console_session = PromptSession()
-        self.contract_console_session = None
+        self.console_session = PromptSession()
+        self.contract_console_session = []
+
+        # Get the Contract Info
+        # Todo: this should be moved to SubGnosisConsole
         self.contract_methods = self.map_contract_methods(contract_instance)
         self.contract_instante = contract_instance
 
     @staticmethod
-    def __get_prompt_text(contract_name=''):
+    def _get_prompt_text(contract_name=''):
         """ Get Prompt Text
 
         :param contract_name:
@@ -66,7 +95,7 @@ class GnosisConsoleInput:
         return f'(gnosis-safe-cli){contract_name}>: '
 
     @staticmethod
-    def __close_session(previous_session=None):
+    def _close_session(previous_session=None):
         """ Close Session
 
         :param previous_session:
@@ -76,10 +105,10 @@ class GnosisConsoleInput:
             raise EOFError
         return previous_session
 
-    def __evaluate_gnosis_console_commands(self, stream, session, session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
+    def _evaluate_gnosis_console_commands(self, stream, session, session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
         print('gnosis_console_stream_input:', stream)
         if stream == 'load':
-            self.run_console_session(prompt_text=self.__get_prompt_text('\n[ ./ ][ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
+            self.run_console_session(prompt_text=self._get_prompt_text('\n[ ./ ][ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
         elif stream == 'about':
             print('here_about')
         elif (stream == 'info') or (stream == 'help'):
@@ -99,7 +128,7 @@ class GnosisConsoleInput:
         item_input = ''
         contract_methods = {}
         try:
-
+            # Retrieve methods presents in the provided abi file
             for index, item in enumerate(contract_instance.functions.__dict__['abi']):
                 try:
                     item_name = item['name']
@@ -147,7 +176,7 @@ class GnosisConsoleInput:
         except Exception as err:
             print(err)
 
-    def __quote_argument(self, value):
+    def _quote_argument(self, value):
         """ Quote Argument
 
         :param value:
@@ -155,16 +184,16 @@ class GnosisConsoleInput:
         """
         return QUOTE + value + QUOTE
 
-    def __get_method_argument_value(self, value):
+    def _get_method_argument_value(self, value):
         """ Get Method Argument Value
 
         :param value:
         :return:
         """
-        return self.__quote_argument(value.split('=')[1])
+        return self._quote_argument(value.split('=')[1])
 
 
-    def __get_input_method_arguments(self, argument_list, function_arguments):
+    def _get_input_method_arguments(self, argument_list, function_arguments):
         """ Get Input Method Arguments
 
         :param argument_list:
@@ -182,7 +211,7 @@ class GnosisConsoleInput:
 
         for sub_index, argument_item in enumerate(argument_list):
             if '--from=' in argument_item:
-                address_from = self.__get_method_argument_value(argument_item)
+                address_from = self._get_method_argument_value(argument_item)
                 aux_address_from = True
             elif '--execute' == argument_item:
                 if to_queue or to_query:
@@ -204,7 +233,7 @@ class GnosisConsoleInput:
                     if argument_type[sub_index] in argument_item \
                             and argument_positions_to_fill != 0 \
                             and argument_positions_to_fill > argument_positions_filled:
-                        arguments_to_fill += self.__get_method_argument_value(argument_item) + COMA
+                        arguments_to_fill += self._get_method_argument_value(argument_item) + COMA
                         argument_positions_filled += 1
 
                 arguments_to_fill = arguments_to_fill[:-1]
@@ -230,24 +259,23 @@ class GnosisConsoleInput:
             for item in contract_methods:
                 if contract_methods[item]['name'] in stream:
                     splitted_stream = stream.split(' ')
-                    function_name, function_arguments, address_from, execute_flag, queue_flag, query_flag = self.__get_input_method_arguments(
+                    function_name, function_arguments, address_from, execute_flag, queue_flag, query_flag = self._get_input_method_arguments(
                         splitted_stream, contract_methods[item]['arguments'])
-                    print(self.__get_input_method_arguments(splitted_stream, contract_methods[item]['arguments']))
+                    print(self._get_input_method_arguments(splitted_stream, contract_methods[item]['arguments']))
 
                     if execute_flag or query_flag or queue_flag:
                         if execute_flag:
                             if contract_methods[item]['name'].startswith('get'):
-                                print('WARNING: transact is usually discourage if you are calling a get function')
+                                print('WARNING: transact() operation is discourage and might not work if you are calling a get function')
                             print(contract_methods[item]['transact'].format(function_arguments, address_from))
                         elif query_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['call'].format(function_arguments, address_from)))
                         elif queue_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
-                            print('executeBatch when you are ready to launch the transactions that you queued up!')
-                        print()
+                            print('INFO: executeBatch when you are ready to launch the transactions that you queued up!')
                     else:
-                        print('--execute, --query or --queue flag needed!')
+                        print('WARNING: --execute, --query or --queue flag needed!')
         except Exception as err:  # KeyError
             print(err)
 
@@ -261,17 +289,17 @@ class GnosisConsoleInput:
         :return:
         """
         if previous_session is None:
-            session = PromptSession(self.__get_prompt_text(), completer=cli_sesion_completer, lexer=ContractLexer(), style=style)
+            session = PromptSession(self._get_prompt_text(), completer=cli_sesion_completer, lexer=ContractLexer(), style=style)
         else:
             session = PromptSession(prompt_text, completer=ContractFunctionCompleter(), style=style, lexer=lexer)
         try:
             while True:
                 try:
                     stream = session.prompt()
-                    self.__evaluate_gnosis_console_commands(stream, session, previous_session=session, session_completer=session_completer, lexer=lexer)
+                    self._evaluate_gnosis_console_commands(stream, session, previous_session=session, session_completer=session_completer, lexer=lexer)
                     self.operate_with_contract(stream, self.contract_methods, self.contract_instante)
                     if (stream == 'close') or (stream == 'quit') or (stream == 'exit'):
-                        return self.__close_session(previous_session)
+                        return self._close_session(previous_session)
                 except KeyboardInterrupt:
                     continue  # Control-C pressed. Try again.
                 except EOFError:
