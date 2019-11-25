@@ -13,7 +13,7 @@ from core.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HAR
 # Import Json ABIReader Package
 from core.utils.build_contract_reader import BuildContractReader
 
-class ContractInterface:
+class TruffleInterface:
     """A convenience interface for interacting with ethereum smart contracts
 
     This interface will handle a main contract and it's dependencies. All it
@@ -165,7 +165,6 @@ class ContractInterface:
         except Exception as err:
             print(err)
             return {}
-
 
     def get_new_instance(self, contract_artifacts):
         """Returns a contract instance object from variables in 'deployment_vars'

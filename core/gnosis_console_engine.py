@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Import Pygments Package
-from core.utils.contract.contract_lexer import ContractLexer
+from core.utils.contract.contract_contract_lexer import ContractLexer
 from core.utils.contract.contract_function_completer import ContractFunctionCompleter
 
 # Import PromptToolkit Package
@@ -18,89 +18,76 @@ from prompt_toolkit.styles import Style
 # from core.logger.constants.custom_verbose_levels import VERBOSE, FATAL
 # from logging import INFO, DEBUG, WARNING
 # import logging
-
-# Import Console Flags
-
-gnosis_safe_completer = WordCompleter([
-    'safe_addr', 'add', 'after', 'all', 'before', 'check', 'current_date',
-    'current_time', 'current_timestamp', 'default',
-    'delete', 'exit', 'quit', 'without'], ignore_case=True)
-
-cli_sesion_completer = WordCompleter([
-    'load', 'about', 'info', 'help', 'newContract', 'loadContract'
-], ignore_case=True)
-
-
-style = Style.from_dict({
-    'completion-menu.completion': 'bg:#008888 #ffffff',
-    'completion-menu.completion.current': 'bg:#00aaaa #000000',
-    'scrollbar.background': 'bg:#88aaaa',
-    'scrollbar.button': 'bg:#222222',
-})
-
 import os
+# Import Console Flags
+from core.utils.gnosis_console_session_accounts import ConsoleSessionAccounts
+
+# style = Style.from_dict({
+#     'completion-menu.completion': 'bg:#008888 #ffffff',
+#     'completion-menu.completion.current': 'bg:#00aaaa #000000',
+#     'scrollbar.background': 'bg:#88aaaa',
+#     'scrollbar.button': 'bg:#222222',
+# })
+
 
 # todo: move to the proper class all methods
 QUOTE = '\''
 COMA = ','
 PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 
-# def to_32byte_hex(val):
-#     return Web3.toHex(Web3.toBytes(val).rjust(32, b'\0'))
 
-
-class ChildGnosisConsole:
-    def __init__(self, affix_stream, contract_instance, lexer, completer, previous_session):
-        self.affix_stream = affix_stream
-        self.contract_instance = contract_instance
-        self.lexer = lexer
-        self.completer = completer
-        self.previous_session = previous_session
-
-    def _get_prompt_text(self, stream=''):
-        """ Get Prompt Text
-
-        :param contract_name:
-        :return:
-        """
-        return f'(gnosis-cli)\n\t[ ./{self.affix_stream} ][ {stream} ]>: '
-
-    @staticmethod
-    def _close_session(previous_session=None):
-        """ Close Session
-
-        :param previous_session:
-        :return:
-        """
-        return previous_session
-
-
-from core.utils.gnosis_console_session_accounts import ConsoleSessionAccounts
-
-class GnosisConsole:
+class GnosisConsoleEngine:
     def __init__(self, contract_artifacts):
         self.name = self.__class__.__name__
         self.console_session = PromptSession()
         self.contract_console_session = []
         self.console_accounts = ConsoleSessionAccounts()
         self.contract_artifacts = contract_artifacts
+        self.is_child = False
+        self.previous_session = None
         # Get the Contract Info
-        # Todo: this should be moved to SubGnosisConsole
-        #print('--loading artifacts', self.contract_artifacts['instance'])
+        self.prompt_text = 'GNOSIS-CLI v0.0.1'
+
+        # Setup of the Preloaded Assets
+        print('--loaded artifacts safe v.1.1.0', contract_artifacts['address'])
         self.contract_methods = self.map_contract_methods(self.contract_artifacts['instance'])
         self.contract_instante = self.contract_artifacts['instance']
 
-    @staticmethod
-    def _get_prompt_text(contract_name=''):
-        """ Get Prompt Text
+        self.session_config = {
+            'prompt': self._get_prompt_text(stream=self.prompt_text),
+            'contract_lexer': ContractLexer(),
+            'contract_completer': ContractFunctionCompleter(),
+            'gnosis_lexer': None,
+            'style': 'Empty',
+            'completer': WordCompleter(
+                ['about', 'info', 'help', 'newContract', 'loadContract', 'setNetwork', 'getNetwork', 'close', 'quit'],
+                ignore_case=True)
+        }
 
-        :param contract_name:
-        :return:
-        """
-        return f'(gnosis-safe-cli){contract_name}>: '
+    def get_console_session(self, previous_session):
+        if previous_session is None:
+            return PromptSession(self.session_config['prompt'], completer=self.session_config['completer'], lexer=self.session_config['contract_lexer'])
+        else:
+            return PromptSession(self._get_prompt_text(affix_stream='./', stream='Gnosis-Safe-v1.1.0'), completer=self.session_config['contract_completer'], lexer=self.session_config['contract_lexer'])
 
-    @staticmethod
-    def _close_session(previous_session=None):
+    def run_console_session(self, prompt_text='', previous_session=None):
+        session = self.get_console_session(previous_session)
+        try:
+            while True:
+                try:
+                    stream = session.prompt()
+                    self._evaluate_gnosis_console_commands(stream, session)
+                    self.operate_with_contract(stream, self.contract_methods, self.contract_instante)
+                    if (stream == 'close') or (stream == 'quit') or (stream == 'exit'):
+                        return self._close_session(previous_session)
+                except KeyboardInterrupt:
+                    continue  # Control-C pressed. Try again.
+                except EOFError:
+                    break  # Control-D pressed.
+        except Exception as err:
+            print('FATAL ERROR: ' + str(err))
+
+    def _close_session(self, previous_session=None):
         """ Close Session
 
         :param previous_session:
@@ -110,14 +97,46 @@ class GnosisConsole:
             raise EOFError
         return previous_session
 
-    def _evaluate_gnosis_console_commands(self, stream, session, session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
+    def _get_gnosis_input_command_argument(self, command_argument, argument_list, checklist):
+        for sub_index, argument_item in enumerate(argument_list):
+            if argument_item.startswith('--alias=') and argument_item in checklist:
+                address_from = self._get_method_argument_value(argument_item)
+                aux_address_from = True
+            elif argument_item.startswith('--name=') and argument_item in checklist:
+                print(command_argument, argument_item)
+            elif argument_item.startswith('--id=') and argument_item in checklist:
+                print(command_argument, argument_item)
+            elif argument_item.startswith('--abi=') and argument_item in checklist:
+                print(command_argument, argument_item)
+            elif argument_item.startswith('--address=') and argument_item in checklist:
+                print(command_argument, argument_item)
+            elif argument_item.startswith('--bytecode=') and argument_item in checklist:
+                print(command_argument, argument_item)
+            else:
+                print(command_argument, argument_item)
+
+    def _evaluate_gnosis_console_commands(self, stream, previous_session=None):
         print('gnosis_console_stream_input:', stream)
-        # loadContract --alias=GnosisSafe-v1.1.0 // loadContract 0
+        argument_list = []
+        command_argument = ''
+        try:
+            split_input = stream.split(' ')
+            print(split_input)
+            command_argument = split_input[0]
+            print('command', command_argument)
+            argument_list = split_input[1:]
+            print('arguments', argument_list)
+        except Exception as err:
+            print(type(err), err)
 
-        if stream.startswith('loadContract'):
-            load_data = stream.slipt(' ')
 
-            self.run_console_session(prompt_text=self._get_prompt_text('\n[ ./ ][ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
+        if command_argument.startswith('loadContract'):
+            try:
+                # tmp_alias, tmp_abi, tmp_bytecode, tmp_address =
+                self._get_gnosis_input_command_argument(command_argument, argument_list, ['--alias=', '--abi=', '--bytecode=', '--address='])
+            except Exception as err:
+                print(type(err), err)
+            self.run_console_session(prompt_text=self._get_prompt_text(affix_stream='./', stream='Gnosis-Safe(v1.1.0)'), previous_session=previous_session)
         elif stream.startswith('about'):
             print('here_about')
         elif (stream == 'info') or (stream == 'help'):
@@ -178,29 +197,9 @@ class GnosisConsole:
                         }
                 except Exception as err:
                     print(type(err), err)
-
-            # self.logger.info('{0} has successfully retrieved {1} elements from current contract'.format(self.name, len(
-            #     contract_methods)))
             return contract_methods
         except Exception as err:
             print(err)
-
-    def _quote_argument(self, value):
-        """ Quote Argument
-
-        :param value:
-        :return:
-        """
-        return QUOTE + value + QUOTE
-
-    def _get_method_argument_value(self, value):
-        """ Get Method Argument Value
-
-        :param value:
-        :return:
-        """
-        return self._quote_argument(value.split('=')[1])
-
 
     def _get_input_method_arguments(self, argument_list, function_arguments):
         """ Get Input Method Arguments
@@ -249,12 +248,6 @@ class GnosisConsole:
 
         return argument_list[0], arguments_to_fill, address_from, execute_value, to_queue, to_query
 
-    # todo: move to the proper class all methods
-    QUOTE = '\''
-    COMA = ','
-    PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
-
-    # todo:
     def operate_with_contract(self, stream, contract_methods, contract_instance):
         """ Operate With Contract
         This function will retrieve the methods present & in the contract_instance
@@ -288,30 +281,28 @@ class GnosisConsole:
         except Exception as err:  # KeyError
             print(err)
 
-    def run_console_session(self, prompt_text='', session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
-        """ Run Console Session
+    def _get_quoted_argument(self, value):
+        """ Quote Argument
 
-        :param prompt_text:
-        :param session_completer:
-        :param previous_session:
-        :param lexer:
+        :param value:
         :return:
         """
-        if previous_session is None:
-            session = PromptSession(self._get_prompt_text(), completer=cli_sesion_completer, lexer=ContractLexer(), style=style)
-        else:
-            session = PromptSession(prompt_text, completer=ContractFunctionCompleter(), style=style, lexer=lexer)
-        try:
-            while True:
-                try:
-                    stream = session.prompt()
-                    self._evaluate_gnosis_console_commands(stream, session, previous_session=session, session_completer=session_completer, lexer=lexer)
-                    self.operate_with_contract(stream, self.contract_methods, self.contract_instante)
-                    if (stream == 'close') or (stream == 'quit') or (stream == 'exit'):
-                        return self._close_session(previous_session)
-                except KeyboardInterrupt:
-                    continue  # Control-C pressed. Try again.
-                except EOFError:
-                    break  # Control-D pressed.
-        except Exception as err:
-            print('FATAL ERROR: ' + str(err))
+        return QUOTE + value + QUOTE
+
+    def _get_prompt_text(self, affix_stream='', stream=''):
+        """ Get Prompt Text
+
+        :param contract_name:
+        :return:
+        """
+        if affix_stream == '':
+            return '[ {cli_name} ]>: '.format(cli_name=self.prompt_text)
+        return '[ {affix_stream} ][ {stream} ]>: '.format(affix_stream=affix_stream, stream=stream)
+
+    def _get_method_argument_value(self, value):
+        """ Get Method Argument Value
+
+        :param value:
+        :return:
+        """
+        return self._get_quoted_argument(value.split('=')[1])

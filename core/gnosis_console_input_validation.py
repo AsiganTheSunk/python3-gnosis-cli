@@ -9,6 +9,9 @@ import logging
 from core.constants.default_values import CONTRACT_ADDRESS_LENGTH, TX_ADDRESS_LENGTH, INFURA_API_KEY_LENGTH, ETHERSCAN_API_KEY_LENGTH
 import re
 
+# def to_32byte_hex(val):
+#     return Web3.toHex(Web3.toBytes(val).rjust(32, b'\0'))
+
 class GnosisConsoleInputValidation:
     """ Gnosis Console Input
 
@@ -33,6 +36,73 @@ class GnosisConsoleInputValidation:
         # Custom Logger Console/File Handler Configuration
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
+
+
+    def _get_input_method_arguments(self, argument_list, function_arguments):
+        """ Get Input Method Arguments
+
+        :param argument_list:
+        :param function_arguments:
+        :return:
+        """
+        arguments_to_fill = ''
+        execute_value = False
+        to_queue = False
+        to_query = False
+        address_from = ''
+        aux_address_from = False
+        argument_positions_to_fill = len(function_arguments)
+        argument_positions_filled = 0
+
+        for sub_index, argument_item in enumerate(argument_list):
+            if '--from=' in argument_item:
+                address_from = self._get_method_argument_value(argument_item)
+                aux_address_from = True
+            elif '--execute' == argument_item:
+                if to_queue or to_query:
+                    print('--queue|--query value already parsed, this value will be ignored')
+                else:
+                    execute_value = True
+            elif '--query' == argument_item:
+                if execute_value or to_queue:
+                    print('--execute|--queue value already parsed, this value will be ignored')
+                else:
+                    to_query = True
+            elif '--queue' == argument_item:
+                if execute_value or to_query:
+                    print('--execute|--query value already parsed, this value will be ignored')
+                else:
+                    to_queue = True
+            else:
+                for sub_index, argument_type in enumerate(function_arguments):
+                    if argument_type[sub_index] in argument_item \
+                            and argument_positions_to_fill != 0 \
+                            and argument_positions_to_fill > argument_positions_filled:
+                        arguments_to_fill += self._get_method_argument_value(argument_item) + COMA
+                        argument_positions_filled += 1
+
+                arguments_to_fill = arguments_to_fill[:-1]
+
+        return argument_list[0], arguments_to_fill, address_from, execute_value, to_queue, to_query
+
+
+    def _evaluate_gnosis_console_commands(self, stream, session, session_completer=cli_sesion_completer, previous_session=None, lexer=ContractLexer()):
+        print('gnosis_console_stream_input:', stream)
+        # loadContract --alias=GnosisSafe-v1.1.0 // loadContract 0
+
+        if stream.startswith('loadContract'):
+            load_data = stream.slipt(' ')
+
+            self.run_console_session(prompt_text=self._get_prompt_text('\n[ ./ ][ Gnosis-Safe(v1.1.0) ]'), previous_session=session, session_completer=session_completer, lexer=lexer)
+        elif stream.startswith('about'):
+            print('here_about')
+        elif (stream == 'info') or (stream == 'help'):
+            print('info/help')
+        elif stream == 'loadOwner':
+            # Add Ethereum money conversion for all types of coins
+            print('loadOwner <Address> or <PK> or <PK + Address>')
+
+
 
     def input_api_key_validation(self, api_key):
         """ Input API Key Validation

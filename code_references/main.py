@@ -11,10 +11,10 @@ from core.utils.gnosis_safe_setup import GnosisSafeModule
 from core.utils.ganache_provider import GanacheProvider
 
 # Import Contract Interface
-from core.utils.contract.contract_truffle import ContractInterface
+from core.utils.contract.contract_truffle import TruffleInterface
 
 # Import Prompt Toolkit Packages
-from core.gnosis_console_input import GnosisConsole
+from core.gnosis_console_engine import GnosisConsoleEngine
 from prompt_toolkit.completion import WordCompleter
 import os
 
@@ -47,7 +47,7 @@ gnosis_safe_cli_completer = [
 
 def call_gnosis_console(contract_instance):
     print('Launching Gnosis Console')
-    gnosis_cli = GnosisConsole(contract_instance)
+    gnosis_cli = GnosisConsoleEngine(contract_instance)
     gnosis_cli.run_console_session(WordCompleter(gnosis_safe_cli_completer, ignore_case=True))
 
 # Todo: to be moved to AccountManager?
@@ -95,7 +95,7 @@ def gnosis_test():
     ganache_provider = GanacheProvider()
     provider = ganache_provider.get_provider()
     # remark: Link to the current contracts via ABI + Bytecode
-    contract_interface = ContractInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
+    contract_interface = TruffleInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     # deploy_contract() will call compile_source_files() if the contract is not yet compiled.
     contract_interface.compile_source_files()
     contract_artifacts = contract_interface.deploy_contract()
