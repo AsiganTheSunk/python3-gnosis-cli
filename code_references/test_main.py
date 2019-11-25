@@ -55,7 +55,7 @@ def init_scenario():
     }
 
     console_contract_artifacts = ConsoleContractData()
-    console_contract_artifacts.add_contract_artifacts(tmp_contract_artifacts, alias='Gnosis-Safe(v1.1.0)')
+    console_contract_artifacts.add_artifact(tmp_contract_artifacts, alias='Gnosis-Safe(v1.1.0)')
     call_gnosis_console(console_contract_artifacts.contract_data)
 
     stream = 'loadContract --alias=Gnosis-Safe(v1.1.0)'

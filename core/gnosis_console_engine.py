@@ -4,6 +4,7 @@
 # Import Pygments Package
 from core.utils.contract.contract_contract_lexer import ContractLexer
 from core.utils.contract.contract_function_completer import ContractFunctionCompleter
+from core.utils.contract.contract_console_data import ContractConsoleArtifacts
 
 # Import PromptToolkit Package
 from prompt_toolkit import PromptSession
@@ -42,16 +43,23 @@ class GnosisConsoleEngine:
         self.console_session = PromptSession()
         self.contract_console_session = []
         self.console_accounts = ConsoleSessionAccounts()
-        self.contract_artifacts = contract_artifacts
-        self.is_child = False
         self.previous_session = None
         # Get the Contract Info
         self.prompt_text = 'GNOSIS-CLI v0.0.1'
+        self.contract_artifacts = contract_artifacts
 
-        # Setup of the Preloaded Assets
-        print('--loaded artifacts safe v.1.1.0', contract_artifacts['address'])
-        self.contract_methods = self.map_contract_methods(self.contract_artifacts['instance'])
-        self.contract_instante = self.contract_artifacts['instance']
+        # remark: Pre-Loading of the Contract Assets (Safe v1.1.0, Safe v1.0.0, Safe v-0.0.1)
+        print('Pre-Loading of the Contract Assets (Safe v1.1.0, Safe v1.0.0, Safe v-0.0.1)')
+
+        self.contract_console_data = ContractConsoleArtifacts()
+        self.contract_console_data.add_artifact(contract_artifacts, alias='Gnosis-Safe-v1.1.0')
+
+        for contract_artifacts_item in [contract_artifacts]:
+            self.contract_console_data.add_artifact(contract_artifacts_item)
+
+        # remark: Map the Artifacts of the Assets
+
+
 
         self.session_config = {
             'prompt': self._get_prompt_text(stream=self.prompt_text),
@@ -60,26 +68,35 @@ class GnosisConsoleEngine:
             'gnosis_lexer': None,
             'style': 'Empty',
             'completer': WordCompleter(
-                ['about', 'info', 'help', 'newContract', 'loadContract', 'setNetwork', 'getNetwork', 'close', 'quit'],
+                ['about', 'info', 'help', 'newContract', 'loadContract', 'setNetwork', 'getNetwork', 'close', 'quit', 'viewContracts', 'viewAccounts'],
                 ignore_case=True)
         }
 
-    def get_console_session(self, previous_session):
+    def get_console_session(self, prompt_text='', previous_session=None):
         if previous_session is None:
             return PromptSession(self.session_config['prompt'], completer=self.session_config['completer'], lexer=self.session_config['contract_lexer'])
         else:
-            return PromptSession(self._get_prompt_text(affix_stream='./', stream='Gnosis-Safe-v1.1.0'), completer=self.session_config['contract_completer'], lexer=self.session_config['contract_lexer'])
+            return PromptSession(prompt_text, completer=self.session_config['contract_completer'], lexer=self.session_config['contract_lexer'])
 
-    def run_console_session(self, prompt_text='', previous_session=None):
-        session = self.get_console_session(previous_session)
+    def run_console_session(self, prompt_text='', previous_session=None, contract_methods=None, contract_instance=None):
+        session = self.get_console_session(prompt_text, previous_session)
         try:
             while True:
                 try:
+                    # remark: Start the prompt
                     stream = session.prompt()
-                    self._evaluate_gnosis_console_commands(stream, session)
-                    self.operate_with_contract(stream, self.contract_methods, self.contract_instante)
+                    if previous_session is None:
+                        # remark: eval gnosis-cli arguments
+                        # note: this should be ported to argparse library, this is only a prototype
+                        self._evaluate_gnosis_console_commands(stream, session)
+                    else:
+                        # remark: eval contract-cli arguments
+                        # note: this should be ported to argparse library, this is only a prototype
+                        self.operate_with_contract(stream, contract_methods, contract_instance)
+
+                    # remark: If you are in a sub session of the console return to gnosis-cli session
                     if (stream == 'close') or (stream == 'quit') or (stream == 'exit'):
-                        return self._close_session(previous_session)
+                        return self._close_console_session(previous_session)
                 except KeyboardInterrupt:
                     continue  # Control-C pressed. Try again.
                 except EOFError:
@@ -87,9 +104,9 @@ class GnosisConsoleEngine:
         except Exception as err:
             print('FATAL ERROR: ' + str(err))
 
-    def _close_session(self, previous_session=None):
+    def _close_console_session(self, previous_session=None):
         """ Close Session
-
+        This function will return the previous session otherwise it will exit the gnosis-cli
         :param previous_session:
         :return:
         """
@@ -98,10 +115,18 @@ class GnosisConsoleEngine:
         return previous_session
 
     def _get_gnosis_input_command_argument(self, command_argument, argument_list, checklist):
+        """ Get Gnosis Input Command Arguments
+        This function will get the input arguments provided in the gnosis-cli
+        :param command_argument:
+        :param argument_list:
+        :param checklist:
+        :return:
+        """
         for sub_index, argument_item in enumerate(argument_list):
-            if argument_item.startswith('--alias=') and argument_item in checklist:
-                address_from = self._get_method_argument_value(argument_item)
-                aux_address_from = True
+            print('item_argument', argument_item)
+            if argument_item.startswith('--alias='):
+                alias = self._get_method_argument_value(argument_item, quote=False)
+                return alias
             elif argument_item.startswith('--name=') and argument_item in checklist:
                 print(command_argument, argument_item)
             elif argument_item.startswith('--id=') and argument_item in checklist:
@@ -129,21 +154,34 @@ class GnosisConsoleEngine:
         except Exception as err:
             print(type(err), err)
 
-
         if command_argument.startswith('loadContract'):
-            try:
+
                 # tmp_alias, tmp_abi, tmp_bytecode, tmp_address =
-                self._get_gnosis_input_command_argument(command_argument, argument_list, ['--alias=', '--abi=', '--bytecode=', '--address='])
-            except Exception as err:
-                print(type(err), err)
-            self.run_console_session(prompt_text=self._get_prompt_text(affix_stream='./', stream='Gnosis-Safe(v1.1.0)'), previous_session=previous_session)
+                tmp_alias = self._get_gnosis_input_command_argument(command_argument, argument_list, ['--alias=', '--abi=', '--bytecode=', '--address='])
+                try:
+                    contract_instance = self.contract_console_data.get_key_from_alias(tmp_alias, 'instance')
+                    contract_methods = self.map_contract_methods(contract_instance)
+                    self.run_console_session(prompt_text=self._get_prompt_text(affix_stream='./', stream=tmp_alias),
+                                             previous_session=previous_session, contract_methods=contract_methods,
+                                             contract_instance=contract_instance)
+                except KeyError as err:
+                    print(type(err), err)
+
+        elif stream.startswith('viewContracts'):
+            print(' alias                        address')
+            for item in self.contract_console_data.contract_data:
+                print(item, self.contract_console_data.contract_data[item]['address'], self.contract_console_data.contract_data[item]['instance'])
+        elif stream.startswith('viewAccounts'):
+
+            for item in self.console_accounts.account_data:
+                print(item, self.console_accounts.account_data[item]['address'], self.console_accounts.account_data[item]['private_key'])
         elif stream.startswith('about'):
             print('here_about')
         elif (stream == 'info') or (stream == 'help'):
             print('info/help')
         elif stream == 'loadOwner':
             # Add Ethereum money conversion for all types of coins
-            print('loadOwner <Address> or <PK> or <PK + Address>')
+            print('newAccount <Address> or <PK> or <PK + Address>')
 
     def map_contract_methods(self, contract_instance):
         """ Map Contract functions
@@ -299,10 +337,12 @@ class GnosisConsoleEngine:
             return '[ {cli_name} ]>: '.format(cli_name=self.prompt_text)
         return '[ {affix_stream} ][ {stream} ]>: '.format(affix_stream=affix_stream, stream=stream)
 
-    def _get_method_argument_value(self, value):
+    def _get_method_argument_value(self, value, quote=True):
         """ Get Method Argument Value
 
         :param value:
         :return:
         """
-        return self._get_quoted_argument(value.split('=')[1])
+        if quote:
+            return self._get_quoted_argument(value.split('=')[1])
+        return value.split('=')[1]

@@ -43,7 +43,7 @@ class ConsoleSessionAccounts:
         """
         for index in range(1, account_number, 1):
             tmp_account = Account.create()
-            self.account_data['rAccount' + str(index)] = {'address': tmp_account.address, 'private_key': tmp_account.privateKey}
+            self.account_data['rAccount' + str(index - 1)] = {'address': tmp_account.address, 'private_key': tmp_account.privateKey}
         return self.account_data
 
     def _setup_ganache_accounts(self):
