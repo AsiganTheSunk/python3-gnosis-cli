@@ -184,7 +184,7 @@ if __name__ == '__main__':
     main()
 
 # note:
-# python gnosis_cli.py --network=ganache --pkey --silence --debug
+# python click_test.py --network=ganache --pkey --silence --debug
 # (gnosis-safe-cli)>:
 # (gnosis-safe-cli)>: viewNetwork
 # (gnosis-safe-cli)>: setNework --name=ganache

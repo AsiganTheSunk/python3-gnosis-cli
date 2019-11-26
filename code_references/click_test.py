@@ -71,12 +71,3 @@
 #     print('[ Summary ]: Input Commands')
 #     print(network, network_id, network_params, contract, address, api_key, script)
 #     # bug: does not properly run the functions provided
-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-def main():
-    return
-
-if __name__ == '__main__':
-    main()

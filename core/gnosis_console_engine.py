@@ -149,6 +149,10 @@ class GnosisConsoleEngine:
                 print(command_argument, argument_item)
                 print('Unknown Command, check help for more information')
 
+    # note: Future command to it's own funciton
+    def command_load_contract(self, command_argument, argument_list):
+        return
+
     def _evaluate_gnosis_console_commands(self, stream, previous_session=None):
         print('gnosis_console_stream_input:', stream)
         argument_list = []
@@ -313,19 +317,28 @@ class GnosisConsoleEngine:
                     splitted_stream = stream.split(' ')
                     function_name, function_arguments, address_from, execute_flag, queue_flag, query_flag = self._get_input_method_arguments(
                         splitted_stream, contract_methods[item]['arguments'])
-                    print(self._get_input_method_arguments(splitted_stream, contract_methods[item]['arguments']))
+                    print('command:', function_name, 'arguments', function_arguments, 'tx:', execute_flag, 'call:', query_flag)
+                    # print(self._get_input_method_arguments(splitted_stream, contract_methods[item]['arguments']))
 
                     if execute_flag or query_flag or queue_flag:
+
+                        # remark: Transaction Solver
                         if execute_flag:
                             if contract_methods[item]['name'].startswith('get'):
                                 print('WARNING: transact() operation is discourage and might not work if you are calling a get function')
                             # if address_from != '':
                                 # address_from = '\{\'from\':{0}\}'.format(address_from)
+
+
                             print(contract_methods[item]['transact'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['transact'].format(function_arguments, address_from)))
+
+                        # remark: Call Solver
                         elif query_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['call'].format(function_arguments, address_from)))
+
+                        # remark: Add to the Batch Solver
                         elif queue_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print('INFO: executeBatch when you are ready to launch the transactions that you queued up!')
