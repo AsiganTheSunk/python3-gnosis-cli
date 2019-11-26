@@ -14,11 +14,11 @@ queue = '--queue'
 execute = '--execute'
 _exit = 'exit'
 
-arg_keywords = ['--address=', '--uint=','--ether=', '--miliether=', '--microether=', '--wei=', '--Kwei=', '--Mwei=', '--Gwei=', '--execute', '--queue']
+arg_keywords = ['--address=', '--uint=','--ether=', '--miliether=', '--microether=', '--wei=', '--Kwei=', '--Mwei=', '--Gwei=', '--execute', '--queue', '--alias=']
 
 function_name = [
     'isOwner', 'getOwners', 'swapOwners', 'removeOwner', 'addOwner',
-    'getThreshold', 'changeThreshold', 'sendEther', 'sendToken'
+    'getThreshold', 'changeThreshold', 'sendEther', 'sendToken', 'viewAccounts'
 ]
 
 function_params = {
@@ -33,6 +33,7 @@ function_params = {
     'sendToken': 'address',
     'NAME': '_',
     'VERSION': '_',
+    'viewAccounts': '_'
 }
 
 function_parms_color = {

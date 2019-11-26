@@ -38,28 +38,16 @@ PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
 
 
 class GnosisConsoleEngine:
-    def __init__(self, contract_artifacts):
+    def __init__(self):
         self.name = self.__class__.__name__
         self.console_session = PromptSession()
         self.contract_console_session = []
         self.console_accounts = ConsoleSessionAccounts()
         self.previous_session = None
-        # Get the Contract Info
-        self.prompt_text = 'GNOSIS-CLI v0.0.1'
-        self.contract_artifacts = contract_artifacts
-
-        # remark: Pre-Loading of the Contract Assets (Safe v1.1.0, Safe v1.0.0, Safe v-0.0.1)
-        print('Pre-Loading of the Contract Assets (Safe v1.1.0, Safe v1.0.0, Safe v-0.0.1)')
-
+        self.prompt_text = 'GNOSIS-CLI v0.0.1a'
+        self.contract_artifacts = None
+        self.network = 'ganache'
         self.contract_console_data = ContractConsoleArtifacts()
-        self.contract_console_data.add_artifact(contract_artifacts, alias='Gnosis-Safe-v1.1.0')
-
-        for contract_artifacts_item in [contract_artifacts]:
-            self.contract_console_data.add_artifact(contract_artifacts_item)
-
-        # remark: Map the Artifacts of the Assets
-
-
 
         self.session_config = {
             'prompt': self._get_prompt_text(stream=self.prompt_text),
@@ -68,15 +56,29 @@ class GnosisConsoleEngine:
             'gnosis_lexer': None,
             'style': 'Empty',
             'completer': WordCompleter(
-                ['about', 'info', 'help', 'newContract', 'loadContract', 'setNetwork', 'getNetwork', 'close', 'quit', 'viewContracts', 'viewAccounts'],
+                ['about', 'info', 'help', 'newContract', 'loadContract', 'setNetwork', 'getNetwork', 'close', 'quit', 'viewContracts', 'viewAccounts', 'newAccount', 'setAutofill'],
                 ignore_case=True)
         }
+
+    def load_contract_artifacts(self, contract_artifacts):
+        self.contract_artifacts = contract_artifacts
+        # remark: Pre-Loading of the Contract Assets (Safe v1.1.0, Safe v1.0.0, Safe v-0.0.1)
+        print('Pre-Loading of the Contract Assets Here')
+        # remark: Map the Artifacts of the Assets
+        # note: method 1, with alias
+        self.contract_console_data.add_artifact(contract_artifacts, alias='Gnosis-Safe-v1.1.0')
+        # note: method 2, wihout alias
+        for contract_artifacts_item in [contract_artifacts]:
+            self.contract_console_data.add_artifact(contract_artifacts_item)
 
     def get_console_session(self, prompt_text='', previous_session=None):
         if previous_session is None:
             return PromptSession(self.session_config['prompt'], completer=self.session_config['completer'], lexer=self.session_config['contract_lexer'])
         else:
             return PromptSession(prompt_text, completer=self.session_config['contract_completer'], lexer=self.session_config['contract_lexer'])
+
+    def set_network(self, value):
+        self.network = value
 
     def run_console_session(self, prompt_text='', previous_session=None, contract_methods=None, contract_instance=None):
         session = self.get_console_session(prompt_text, previous_session)
@@ -123,22 +125,29 @@ class GnosisConsoleEngine:
         :return:
         """
         for sub_index, argument_item in enumerate(argument_list):
-            print('item_argument', argument_item)
             if argument_item.startswith('--alias='):
+                print('Command:', command_argument, 'Argument:', argument_item)
                 alias = self._get_method_argument_value(argument_item, quote=False)
                 return alias
-            elif argument_item.startswith('--name=') and argument_item in checklist:
+            elif argument_item.startswith('--name='):
+                print('Command:', command_argument, 'Argument:', argument_item)
+                name = self._get_method_argument_value(argument_item, quote=False)
+                return name
+            elif argument_item.startswith('--id='):
+                print('Command:', command_argument, 'Argument:', argument_item)
                 print(command_argument, argument_item)
-            elif argument_item.startswith('--id=') and argument_item in checklist:
-                print(command_argument, argument_item)
-            elif argument_item.startswith('--abi=') and argument_item in checklist:
-                print(command_argument, argument_item)
-            elif argument_item.startswith('--address=') and argument_item in checklist:
-                print(command_argument, argument_item)
-            elif argument_item.startswith('--bytecode=') and argument_item in checklist:
-                print(command_argument, argument_item)
+            elif argument_item.startswith('--abi='):
+                print('Command:', command_argument, 'Argument:', argument_item)
+                contract_abi = self._get_method_argument_value(argument_item, quote=False)
+            elif argument_item.startswith('--address='):
+                print('Command:', command_argument, 'Argument:', argument_item)
+                contract_address = self._get_method_argument_value(argument_item, quote=False)
+            elif argument_item.startswith('--bytecode='):
+                print('Command:', command_argument, 'Argument:', argument_item)
+                contract_bytecode = self._get_method_argument_value(argument_item, quote=False)
             else:
                 print(command_argument, argument_item)
+                print('Unknown Command, check help for more information')
 
     def _evaluate_gnosis_console_commands(self, stream, previous_session=None):
         print('gnosis_console_stream_input:', stream)
@@ -155,7 +164,6 @@ class GnosisConsoleEngine:
             print(type(err), err)
 
         if command_argument.startswith('loadContract'):
-
                 # tmp_alias, tmp_abi, tmp_bytecode, tmp_address =
                 tmp_alias = self._get_gnosis_input_command_argument(command_argument, argument_list, ['--alias=', '--abi=', '--bytecode=', '--address='])
                 try:
@@ -167,19 +175,23 @@ class GnosisConsoleEngine:
                 except KeyError as err:
                     print(type(err), err)
 
+        elif stream.startswith('setNetwork'):
+            tmp_name = self._get_gnosis_input_command_argument(command_argument, argument_list, ['--name='])
+            self.set_network(tmp_name)
+        elif stream.startswith('getNetwork'):
+            print('Current Network:', self.network)
         elif stream.startswith('viewContracts'):
             print(' alias                        address')
             for item in self.contract_console_data.contract_data:
                 print(item, self.contract_console_data.contract_data[item]['address'], self.contract_console_data.contract_data[item]['instance'])
         elif stream.startswith('viewAccounts'):
-
             for item in self.console_accounts.account_data:
                 print(item, self.console_accounts.account_data[item]['address'], self.console_accounts.account_data[item]['private_key'])
         elif stream.startswith('about'):
-            print('here_about')
+            print('GNOSIS-CLI Version 0.0.1a')
         elif (stream == 'info') or (stream == 'help'):
             print('info/help')
-        elif stream == 'loadOwner':
+        elif stream == 'newAccount':
             # Add Ethereum money conversion for all types of coins
             print('newAccount <Address> or <PK> or <PK + Address>')
 
@@ -307,7 +319,10 @@ class GnosisConsoleEngine:
                         if execute_flag:
                             if contract_methods[item]['name'].startswith('get'):
                                 print('WARNING: transact() operation is discourage and might not work if you are calling a get function')
+                            # if address_from != '':
+                                # address_from = '\{\'from\':{0}\}'.format(address_from)
                             print(contract_methods[item]['transact'].format(function_arguments, address_from))
+                            print(eval(contract_methods[item]['transact'].format(function_arguments, address_from)))
                         elif query_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['call'].format(function_arguments, address_from)))
