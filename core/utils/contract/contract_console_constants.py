@@ -16,9 +16,12 @@ _exit = 'exit'
 
 arg_keywords = ['--address=', '--uint=','--ether=', '--miliether=', '--microether=', '--wei=', '--Kwei=', '--Mwei=', '--Gwei=', '--execute', '--queue', '--alias=']
 
+# note: to be independent from function_name completer
+view_function_name = ['viewAccounts', 'viewContract']
+
 function_name = [
     'isOwner', 'getOwners', 'swapOwners', 'removeOwner', 'addOwner',
-    'getThreshold', 'changeThreshold', 'sendEther', 'sendToken', 'viewAccounts'
+    'getThreshold', 'changeThreshold', 'sendEther', 'sendToken', 'viewAccounts', 'viewContract'
 ]
 
 function_params = {

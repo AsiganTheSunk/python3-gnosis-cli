@@ -13,7 +13,7 @@ from core.constants.default_truffle_commands import TRUFFLE_COMPILE, TRUFFLE_HAR
 # Import Json ABIReader Package
 from core.utils.build_contract_reader import BuildContractReader
 
-class TruffleInterface:
+class ConsoleTruffleInterface:
     """A convenience interface for interacting with ethereum smart contracts
 
     This interface will handle a main contract and it's dependencies. All it

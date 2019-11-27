@@ -8,13 +8,13 @@ from core.constants.contract_contants import NULL_ADDRESS
 from core.utils.gnosis_safe_setup import GnosisSafeModule
 
 # Import Provider Packages
-from core.utils.ganache_provider import GanacheProvider
+from core.utils.provider.ganache_provider import GanacheProvider
 
 # Import Contract Interface
-from core.utils.contract.contract_truffle import TruffleInterface
+from core.console_truffle_interface import ConsoleTruffleInterface
 
 # Import Prompt Toolkit Packages
-from core.gnosis_console_engine import GnosisConsoleEngine
+from core.console_engine import GnosisConsoleEngine
 from prompt_toolkit.completion import WordCompleter
 import os
 
@@ -95,7 +95,7 @@ def gnosis_test():
     ganache_provider = GanacheProvider()
     provider = ganache_provider.get_provider()
     # remark: Link to the current contracts via ABI + Bytecode
-    contract_interface = TruffleInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
+    contract_interface = ConsoleTruffleInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     # deploy_contract() will call compile_source_files() if the contract is not yet compiled.
     contract_interface.compile_source_files()
     contract_artifacts = contract_interface.deploy_contract()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Import Prompt Toolkit Packages
-from core.gnosis_console_engine import GnosisConsoleEngine
+from core.console_engine import GnosisConsoleEngine
 from safe_script import init_scenario
 
 # Init Scenario with Random Safe with Setup (Pre-Loaded Contracts)

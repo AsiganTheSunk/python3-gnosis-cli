@@ -3,9 +3,7 @@
 
 import os
 
-from prompt_toolkit.completion import WordCompleter
-
-from core.gnosis_console_engine import GnosisConsoleEngine
+from core.console_engine import GnosisConsoleEngine
 
 proxy_factory_deterministic_address = '0xCfEB869F69431e42cdB54A4F4f105C19C080A601'
 safe_gnosis_deterministic_address = '0xe982E462b094850F12AF94d21D470e21bE9D0E9C'
@@ -13,8 +11,8 @@ safe_gnosis_deterministic_address = '0xe982E462b094850F12AF94d21D470e21bE9D0E9C'
 proxy_factory_abi = os.getcwd() + '/assets/safe-contracts-1.1.0/build/contracts/Proxy.json'
 safe_gnosis_abi = os.getcwd() + '/assets/safe-contracts-1.1.0/build/contracts/GnosisSafe.json'
 
-from core.utils.contract.contract_truffle import TruffleInterface
-from core.utils.ganache_provider import GanacheProvider
+from core.console_truffle_interface import ConsoleTruffleInterface
+from core.utils.provider.ganache_provider import GanacheProvider
 
 # Import GnosisSafe Module
 from core.utils.gnosis_safe_setup import GnosisSafeModule
@@ -36,7 +34,7 @@ def init_scenario():
     PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
     ganache_provider = GanacheProvider()
     provider = ganache_provider.get_provider()
-    contract_interface = TruffleInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
+    contract_interface = ConsoleTruffleInterface(provider, PROJECT_DIRECTORY, ['GnosisSafe'], ['Proxy'])
     contract_artifacts = contract_interface.deploy_contract()
 
     # remark: Get Contract Artifacts for the Proxy & GnosisSafe

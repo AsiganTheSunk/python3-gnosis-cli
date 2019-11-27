@@ -3,17 +3,6 @@ class ContractConsoleArtifacts:
         self.contract_artifact_list = contract_artifact_list
         self.contract_data = {}
 
-        # if self.contract_artifact_list is not None:
-        #     for contract_artifacts_item in contract_artifact_list:
-        #         data = self.add_artifact(contract_artifacts_item)
-        #         self.update_data(data)
-        #
-        # print(self.contract_data['uContract0']['address'])
-
-
-    def update_data(self, data):
-        self.contract_data = data
-
     def add_artifact(self, contract_artifacts, alias=''):
         if alias != '':
             self.contract_data[alias] = contract_artifacts
@@ -23,7 +12,7 @@ class ContractConsoleArtifacts:
 
         return self.contract_data
 
-    def get_key_from_alias(self, alias, key=None):
+    def get_value_from_alias(self, alias, key=None):
         try:
             if key is None:
                 return self.contract_data[alias]

@@ -1,5 +1,5 @@
 
-swap_owner = 'swapOwners --address=0x0000000000000000000000000 --address=0x0000000000000000000000000000000000001 --address=000000000000000000000000000000002 --from=x0000000000000000000000000003 --execute'
+stream = 'swapOwners --address=0x0000000000000000000000000 --address=0x0000000000000000000000000000000000001 --address=000000000000000000000000000000002 --from=x0000000000000000000000000003 --execute'
 
 # remark: transact with arguments
 # note: could be autofilled if not provided and set in the console session
@@ -12,6 +12,8 @@ swap_owner = 'swapOwners --address=0x0000000000000000000000000 --address=0x00000
 #     # transaction.update({'gas': base_gas})
 #     # transaction.update({'gasPrice': gas_price})
 #     # transaction.update({'nonce': nonce})
+
+# note: --from=, --gas=, nonce=, gasprice=
 
 import re
 
@@ -84,16 +86,25 @@ print(Web3.toChecksumAddress('0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb'))
 
 from web3 import Web3
 execute = True
-if execute:
-    Web3.fromWei(1000000000000000000, 'ether')
 
-    # Currency Utility
-Web3.toWei()
-Web3.fromWei()
+# Currency Utility
+# Gather all the --Gwei, --Kwei etc etc sum up them and give the ''
+if execute:
+    Web3.fromWei(1000000000000000000, 'Gwei')
+#Web3.toWei()
+#Web3.fromWei()
 
 # Address Utility
 Web3.isAddress('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed')
 Web3.isChecksumAddress('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed')
+
+payload_options = ['alias', 'from', 'gas', 'gasPrice']
+transaction_payload_options = ['alias', 'from', 'gas', 'gasPrice', 'nonce', '']
+
+
+# if __name__ == '__main__':
+
+
 
 # def send(function_, *tx_args, event=None, tx_params=None):
 #     """Contract agnostic transaction function with extras
