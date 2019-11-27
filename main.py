@@ -1,6 +1,28 @@
-#
-# stream = 'swapOwners --address=0x0000000000000000000000000 --address=0x0000000000000000000000000000000000001 --address=000000000000000000000000000000002 --from=x0000000000000000000000000003 --execute'
-#
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Todo: Lexer per init of console, type of session, so emun to flag the type focusing on usability in the future
+# Todo: Module loader, so it can run the setup for the contract you want to operate with
+# Todo: Report the pos of the word to the lexer so it can know if it's dealing with a call to a function or an param
+# Todo: Build the suffix + affix list for the management of simple contracts
+# Todo: Improve function mapping so it can properly separate Events(Emit's) from the contract methods from the actual functions
+# Todo: Maybe Add a listener for the Events done by the contract atleast locally so it can be studied how it behaves
+# Todo: Add Interface for the Common Contract Operations Setup(), Transact() etc etc so it can be called from the console
+#   If None are provided, the console will assume an standar way of operation for the basic known transaction procedures
+# Todo: Move Current "Setup" for the GnosisSafe to it's proper module
+# Todo: Move Current "Transact" overrider to the GnosisSafe module
+# Todo: Only add to the temporal lexer valid addresses (it has been operated with)
+
+# validator = Validator.from_callable(
+#     is_valid_address, error_message='Not a valid address (Does not contain an 0x).', move_cursor_to_end=True
+# )
+
+query_is_owner = 'isOwner --address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1 --query'
+execute_swap_owner = 'swapOwner --address=0x00000000000000000000000000000000 --address=0x00000000000000000000000000000001 --address=0x00000000000000000000000000000002 --from=0x00000000000000000000000000000003 --execute'
+query_get_owners = 'getOwners --query'
+query_execTransaction_not_enough_args = 'execTransaction --queue --address=0x00000000000000000000000000000000 --address=0x00000000000000000000000000000001 --address=0x00000000000000000000000000000002'
+
+
 # # remark: transact with arguments
 # # note: could be autofilled if not provided and set in the console session
 # #

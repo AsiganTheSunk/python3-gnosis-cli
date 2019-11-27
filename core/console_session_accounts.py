@@ -18,6 +18,7 @@ class ConsoleSessionAccounts:
         self.account_data = {'NULL': {'address': '0x' + '0' * 40, 'private_key': HexBytes('')}}
         self._setup_ganache_accounts()
         self._setup_random_accounts()
+        # todo: web3.eth.getBalance(address)
 
     def add_account(self, address, private_key='', alias='uAccount'):
         """ Add Account

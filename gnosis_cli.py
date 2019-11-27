@@ -3,7 +3,7 @@
 
 # Import Prompt Toolkit Packages
 from core.console_engine import GnosisConsoleEngine
-from safe_script import init_scenario
+from safe_init_scenario_script import init_scenario
 
 # Init Scenario with Random Safe with Setup (Pre-Loaded Contracts)
 contract_artifacts_assests = init_scenario()

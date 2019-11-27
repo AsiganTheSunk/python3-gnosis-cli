@@ -1,12 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from core.utils.gnosis_safe_setup import GnosisSafeModule
 from core.console_truffle_interface import ConsoleTruffleInterface
 from core.utils.provider.ganache_provider import GanacheProvider
 import os
 
-from core.utils.gnosis_safe_setup import GnosisSafeModule
 
 def init_scenario():
     print('---------' * 10)
-    print('Start Init of the Contract Scenario')
+    print('Init of the Contract Scenario')
     print('---------' * 10)
     PROJECT_DIRECTORY = os.getcwd() + '/assets/safe-contracts-1.1.0/'
     ganache_provider = GanacheProvider()
