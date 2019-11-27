@@ -84,7 +84,9 @@ class GnosisConsoleEngine:
                         # remark: eval contract-cli arguments
                         self.operate_with_contract(stream, contract_methods, contract_instance)
                     # remark: If you are in a sub session of the console return to gnosis-cli session
-                    self.command_console_session_close(stream, previous_session)
+                    command_argument, argument_list = self._get_input_console_arguments(stream)
+                    if (command_argument == 'close') or (command_argument == 'quit') or (command_argument == 'exit'):
+                        return self._close_console_session(previous_session)
                 except KeyboardInterrupt:
                     continue  # remark: Control-C pressed. Try again.
                 except EOFError:
@@ -137,11 +139,6 @@ class GnosisConsoleEngine:
         :return:
         """
         self.network = value
-
-    def command_console_session_close(self, stream, previous_session):
-        command_argument, argument_list = self._get_input_console_arguments(stream)
-        if (command_argument == 'close') or (command_argument == 'quit') or (command_argument == 'exit'):
-            return self._close_console_session(previous_session)
 
     def command_set_default_owner(self, value):
         self.default_owner = value
