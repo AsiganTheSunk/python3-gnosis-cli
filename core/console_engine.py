@@ -80,6 +80,34 @@ class GnosisConsoleEngine:
     def set_network(self, value):
         self.network = value
 
+    def set_default_owner_account(self):
+        return
+
+    def set_default_owner_account_list(self):
+        return
+
+    def get_default_owner_account_list(self):
+        return
+
+    def get_default_owner_account(self):
+        return
+
+    def new_payload(self):
+        return
+
+    def view_payloads(self):
+        return
+
+    def view_accounts(self):
+        return
+
+    def view_contracts(self):
+        return
+
+    def get_payload(self,  value):
+        return
+
+
     def run_console_session(self, prompt_text='', previous_session=None, contract_methods=None, contract_instance=None):
         session = self.get_console_session(prompt_text, previous_session)
         try:
