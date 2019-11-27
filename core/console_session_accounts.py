@@ -52,7 +52,7 @@ class ConsoleSessionAccounts:
         :return:
         """
         for index, data in enumerate(ganache_data):
-            tmp_account = Account.from_key(ganache_data[data]['private_key'])
+            tmp_account = Account.privateKeyToAccount(ganache_data[data]['private_key'])
             self.account_data['gAccount' + str(index)] = {'address': tmp_account.address, 'private_key': tmp_account.privateKey}
 
     def get_account_data(self, stream):

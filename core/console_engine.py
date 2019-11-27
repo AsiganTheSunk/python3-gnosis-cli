@@ -485,13 +485,15 @@ class GnosisConsoleEngine:
 
                             print(contract_methods[item]['transact'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['transact'].format(function_arguments, address_from)))
+                            # this is the hash to be signed, maybe call for approve dialog, approveHash dialogue,
+                            # map functions to be performed by the gnosis_py library
 
                         # remark: Call Solver
                         elif query_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print(eval(contract_methods[item]['call'].format(function_arguments, address_from)))
 
-                        # remark: Add to the Batch Solver
+                        # remark: Add to the Batch Solvere
                         elif queue_flag:
                             print(contract_methods[item]['call'].format(function_arguments, address_from))
                             print('INFO: executeBatch when you are ready to launch the transactions that you queued up!')
